@@ -10,14 +10,13 @@
 The config is validated first. Files copied (nothing else is touched):
   device/launcher.py               -> /launcher.py
   device/lib/badgekit.py           -> /lib/badgekit.py
-  device/henniefrancis/{personal,aws,microsoft,project,awscommza,dotcore,devconf}.py -> /henniefrancis/
-                                   (awscommza.py, dotcore.py and devconf.py replace the older apps of the same name)
-  icons   (config icons/ override the repo defaults)       -> /henniefrancis/
-          (icon-awscommza.png, icon-dotcore.png and icon-devconf.png come only from your config icons/; skipped if absent)
+  device/badge/{profile,company,event,project,work}.py -> /badge/
+  icons   (config icons/ override the repo defaults)       -> /badge/
+          (e.g. icon-work.png ships as a placeholder; add your own icons in config icons/)
   images  (config images/ override the repo defaults)      -> /images/
-  <config>/badge.json              -> /henniefrancis/config/badge.json
+  <config>/badge.json              -> /badge/config/badge.json
   (generated) launcher state       -> /state/launcher.json  (boot to launcher page 1; --keep-state skips)
-The older apps (hennie.py, summit.py, ...) already on the badge are left alone.
+Other apps already on the badge are left alone.
 """
 import argparse
 import os
@@ -32,10 +31,10 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 import validate_config  # noqa: E402
 
 DEVICE = os.path.join(ROOT, "device")
-APPS = ("personal", "aws", "microsoft", "project", "awscommza", "dotcore", "devconf")
+APPS = ("profile", "company", "event", "project", "work")
 PORT_RE = re.compile(r"^(COM\d{1,3}|/dev/tty[A-Za-z0-9._-]{1,30}|/dev/cu\.[A-Za-z0-9._-]{1,30})\Z")
 PNG_NAME_RE = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9_.-]{0,60}\.png\Z")
-REMOTE_DIRS = ("/lib", "/images", "/state", "/henniefrancis", "/henniefrancis/config")
+REMOTE_DIRS = ("/lib", "/images", "/state", "/badge", "/badge/config")
 # Boot to launcher page 1 instead of re-opening the last app (which hid the new launcher on first deploy).
 LAUNCHER_STATE_REMOTE = "/state/launcher.json"
 LAUNCHER_STATE = '{"page": 0, "running": "launcher"}\n'
@@ -56,14 +55,14 @@ def build_plan(config_dir):
         (os.path.join(DEVICE, "lib", "badgekit.py"), "/lib/badgekit.py"),
     ]
     for app in APPS:
-        plan.append((os.path.join(DEVICE, "henniefrancis", app + ".py"), "/henniefrancis/%s.py" % app))
-    icons = {n: p for n, p in _pngs(os.path.join(DEVICE, "henniefrancis")).items() if n.startswith("icon-")}
+        plan.append((os.path.join(DEVICE, "badge", app + ".py"), "/badge/%s.py" % app))
+    icons = {n: p for n, p in _pngs(os.path.join(DEVICE, "badge")).items() if n.startswith("icon-")}
     icons.update({n: p for n, p in _pngs(os.path.join(config_dir, "icons")).items() if n.startswith("icon-")})
     images = _pngs(os.path.join(DEVICE, "images"))
     images.update(_pngs(os.path.join(config_dir, "images")))
-    plan += [(p, "/henniefrancis/" + n) for n, p in sorted(icons.items())]
+    plan += [(p, "/badge/" + n) for n, p in sorted(icons.items())]
     plan += [(p, "/images/" + n) for n, p in sorted(images.items())]
-    plan.append((os.path.join(config_dir, "badge.json"), "/henniefrancis/config/badge.json"))
+    plan.append((os.path.join(config_dir, "badge.json"), "/badge/config/badge.json"))
     return plan
 
 

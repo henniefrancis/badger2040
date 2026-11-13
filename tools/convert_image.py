@@ -1,8 +1,8 @@
 """Convert a logo or photo into a 1-bit PNG for the Badger 2040.
 
 Examples:
-  python tools/convert_image.py my-logo.png config/images/aws.png --kind logo
-  python tools/convert_image.py my-logo.png config/icons/icon-aws.png --kind icon
+  python tools/convert_image.py my-logo.png config/images/company.png --kind logo
+  python tools/convert_image.py my-logo.png config/icons/icon-company.png --kind icon
   python tools/convert_image.py photo.jpg config/images/me.png --kind photo
 
 Kinds:

@@ -1,33 +1,34 @@
 {
   "sections": {
     "a": {
-      "title": "Personal",
+      "title": "Profile",
       "pages": [
-        {"type": "badge", "header": "Welcome", "name": "Your Name", "title": "Your title", "website": "example.com", "image": "/images/hennie.png", "image_w": 108, "image_y": 0},
+        {"type": "badge", "header": "Welcome", "name": "Your Name", "title": "Your title", "website": "example.com", "image": "/images/me.png", "image_w": 104, "image_y": 0},
         {"type": "qr", "title": "Contact Details", "text": "Save my Contact Details", "vcard": {
           "name": "Your Name",
           "title": "Your title",
           "company": "Your company",
           "email": "you@example.com",
-          "phone": "+00 00 000 0000",
+          "phone": "+00 000 000 0000",
           "url": "https://example.com",
           "linkedin": "https://www.linkedin.com/in/your-handle"
         }},
-        {"type": "qr", "title": "My Personal Website", "text": "Visit my website", "url": "https://example.com"}
+        {"type": "qr", "title": "My Website", "text": "Visit my website", "url": "https://example.com"}
       ]
     },
     "b": {
-      "title": "AWS",
+      "title": "Company",
       "pages": [
-        {"type": "image", "image": "/images/aws.png"},
-        {"type": "badge", "header": "AWS Community Builder", "name": "Your Name", "title": "Serverless", "website": "example.com", "image": "/images/hennie.png", "image_w": 108, "image_y": 0},
-        {"type": "qr", "title": "AWS Builder Center", "text": "Visit my Builder Profile", "url": "https://builder.aws.com/community/@henniefrancis"}
+        {"type": "image", "image": "/images/company.png"},
+        {"type": "badge", "header": "Your Company", "name": "Your Name", "title": "Your role", "website": "example.com", "image": "/images/me.png", "image_w": 104, "image_y": 0},
+        {"type": "qr", "title": "Your Company", "text": "Visit our website", "url": "https://example.com"}
       ]
     },
     "c": {
-      "title": "Microsoft",
+      "title": "Event",
       "pages": [
-        {"type": "image", "image": "/images/microsoft.png"}
+        {"type": "image", "image": "/images/event.png"},
+        {"type": "qr", "title": "Event Schedule", "text": "See the schedule", "url": "https://example.org/schedule"}
       ]
     },
     "p": {
@@ -48,7 +49,7 @@
     "work": {
       "title": "Work",
       "pages": [
-        {"type": "badge", "header": "Your Organisation", "name": "Your Name", "title": "Your role", "website": "example.org", "image": "/images/hennie.png", "image_w": 108, "image_y": 0},
+        {"type": "badge", "header": "Your Organisation", "name": "Your Name", "title": "Your role", "website": "example.org", "image": "/images/me.png", "image_w": 104, "image_y": 0},
         {"type": "qr", "title": "Your Organisation", "text": "Visit our website", "url": "https://example.org"}
       ]
     }

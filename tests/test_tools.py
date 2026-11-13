@@ -24,7 +24,7 @@ def cfg():
         return json.load(f)
 
 
-def make_config_dir(tmp_path, cfg, images=("aws.png", "microsoft.png"), icons=True):
+def make_config_dir(tmp_path, cfg, images=("company.png", "event.png"), icons=True):
     d = tmp_path / "private"
     d.mkdir()
     (d / "badge.json").write_text(json.dumps(cfg), encoding="utf-8")
@@ -49,8 +49,8 @@ def real_looking(cfg):
         "phone": "+11 22 333 4444", "url": "https://jane.dev", "linkedin": "https://www.linkedin.com/in/jroe"}
     c["sections"]["work"]["pages"][0]["name"] = "Jane Roe"
     c["sections"]["work"]["pages"][1]["url"] = "https://roe.dev"
-    for extra in ("awscommza", "dotcore", "devconf"):          # the repo ships wrapper apps for these sections
-        c["sections"][extra] = copy.deepcopy(c["sections"]["work"])
+    c["sections"]["b"]["pages"][2]["url"] = "https://roe.dev"
+    c["sections"]["c"]["pages"][1]["url"] = "https://roe.dev"
     return c
 
 
@@ -199,20 +199,20 @@ def test_convert_cli(tmp_path):
 
 
 def test_shipped_icons_and_images_are_one_bit_and_sized():
-    apps = os.path.join(ROOT, "device", "henniefrancis")
-    for n in ("personal", "aws", "microsoft", "project"):
+    apps = os.path.join(ROOT, "device", "badge")
+    for n in ("profile", "company", "event", "project", "work"):
         with Image.open(os.path.join(apps, "icon-%s.png" % n)) as im:
             assert im.mode == "1" and im.size == (52, 52), n
-    for n in ("aws", "microsoft"):
+    for n in ("company", "event"):
         with Image.open(os.path.join(ROOT, "device", "images", n + ".png")) as im:
             assert im.mode == "1" and im.size == (296, 128), n
 
 
 # ---------------------------------------------------------------- deploy
 def test_plan_contents_and_remote_paths(tmp_path, cfg):
-    d = make_config_dir(tmp_path, real_looking(cfg), images=["aws.png"], icons=False)
+    d = make_config_dir(tmp_path, real_looking(cfg), images=["company.png"], icons=False)
     (d / "icons").mkdir()
-    Image.new("1", (52, 52), 1).save(d / "icons" / "icon-aws.png")
+    Image.new("1", (52, 52), 1).save(d / "icons" / "icon-company.png")
     (d / "icons" / "not-an-icon.png").write_bytes(b"x")
     plan = dict((remote, local) for local, remote in deploy.build_plan(str(d)))
     for r in plan:
@@ -220,13 +220,13 @@ def test_plan_contents_and_remote_paths(tmp_path, cfg):
     assert plan["/lib/badgekit.py"].endswith(os.path.join("device", "lib", "badgekit.py"))
     assert plan["/launcher.py"].endswith(os.path.join("device", "launcher.py"))
     for app in deploy.APPS:
-        assert "/henniefrancis/%s.py" % app in plan
-    assert plan["/henniefrancis/icon-aws.png"] == str(d / "icons" / "icon-aws.png")   # config overrides repo
-    assert plan["/images/aws.png"] == str(d / "images" / "aws.png")
-    assert plan["/images/microsoft.png"].startswith(ROOT)                             # repo default
-    assert plan["/henniefrancis/config/badge.json"] == str(d / "badge.json")
-    assert "/henniefrancis/not-an-icon.png" not in plan
-    assert "/henniefrancis/hennie.py" not in plan and "/henniefrancis/summit.py" not in plan
+        assert "/badge/%s.py" % app in plan
+    assert plan["/badge/icon-company.png"] == str(d / "icons" / "icon-company.png")   # config overrides repo
+    assert plan["/images/company.png"] == str(d / "images" / "company.png")
+    assert plan["/images/event.png"].startswith(ROOT)                             # repo default
+    assert plan["/badge/config/badge.json"] == str(d / "badge.json")
+    assert "/badge/not-an-icon.png" not in plan
+    assert sorted(r for r in plan if r.endswith(".py") and r.startswith("/badge/")) == sorted("/badge/%s.py" % a for a in deploy.APPS)
 
 
 def test_dry_run_copies_nothing(tmp_path, cfg, monkeypatch, capsys):
@@ -274,10 +274,10 @@ def test_deploy_runs_mpremote_without_shell(tmp_path, cfg, monkeypatch):
     assert all(c[:5] == [sys.executable, "-m", "mpremote", "connect", "COM3"] for c, _ in calls)
     copy_cmd = [c for c, _ in calls if "cp" in c][0]
     assert copy_cmd.count("+") == copy_cmd.count("cp") - 1
-    assert ":/henniefrancis/config/badge.json" in copy_cmd
+    assert ":/badge/config/badge.json" in copy_cmd
     assert calls[-1][0][-1] == "reset"
     mkdirs = [c[-1] for c, _ in calls if "mkdir" in c]
-    assert ":/lib" in mkdirs and ":/henniefrancis/config" in mkdirs
+    assert ":/lib" in mkdirs and ":/badge/config" in mkdirs
 
 
 def test_deploy_reports_mpremote_failure(tmp_path, cfg, monkeypatch):
@@ -294,24 +294,24 @@ def test_deploy_reports_mpremote_failure(tmp_path, cfg, monkeypatch):
 
 # ------------------------------------------- fix round: images, sections, warnings
 def test_placeholder_image_fallback_is_refused_unless_allowed(tmp_path, cfg):
-    d = make_config_dir(tmp_path, real_looking(cfg), images=["aws.png"], icons=True)   # no microsoft.png
+    d = make_config_dir(tmp_path, real_looking(cfg), images=["company.png"], icons=True)   # no event.png
     errors, _ = vc.validate(str(d))
-    assert any("image /images/microsoft.png" in e and "PLACEHOLDER" in e for e in errors)
+    assert any("image /images/event.png" in e and "PLACEHOLDER" in e for e in errors)
     errors, report = vc.validate(str(d), allow_placeholder_images=True)
     assert errors == []
-    assert any(r.startswith("WARNING") and "microsoft.png" in r for r in report)
+    assert any(r.startswith("WARNING") and "event.png" in r for r in report)
 
 
 def test_placeholder_icon_fallback_is_refused(tmp_path, cfg):
     d = make_config_dir(tmp_path, real_looking(cfg), icons=False)
     errors, _ = vc.validate(str(d))
-    assert any("launcher icon icon-aws.png" in e for e in errors)
+    assert any("launcher icon icon-company.png" in e for e in errors)
     assert any("launcher icon icon-project.png" in e for e in errors)
 
 
 def test_deploy_refuses_placeholder_images_but_allows_with_flag(tmp_path, cfg, monkeypatch, capsys):
     monkeypatch.setattr(subprocess, "run", lambda *a, **k: pytest.fail("must not run mpremote"))
-    d = make_config_dir(tmp_path, real_looking(cfg), images=["aws.png"])
+    d = make_config_dir(tmp_path, real_looking(cfg), images=["company.png"])
     assert deploy.main(["--config", str(d), "--dry-run"]) == 1
     assert deploy.main(["--config", str(d), "--dry-run", "--allow-placeholder-images"]) == 0
     assert "WARNING" in capsys.readouterr().out
@@ -331,12 +331,12 @@ def _dir(tmp_path, name, c):
     d.mkdir()
     (d / "badge.json").write_text(json.dumps(c))
     (d / "images").mkdir()
-    for n in ("aws.png", "microsoft.png"):
+    for n in ("company.png", "event.png"):
         Image.new("1", (10, 10), 1).save(d / "images" / n)
     return d
 
 
-@pytest.mark.parametrize("path", ["/elsewhere/aws.png", "/images/sub/aws.png", "/images/.png", "/aws.png"])
+@pytest.mark.parametrize("path", ["/elsewhere/company.png", "/images/sub/company.png", "/images/.png", "/company.png"])
 def test_image_paths_must_be_images_dir_name(tmp_path, cfg, path):
     c = real_looking(cfg)
     c["sections"]["b"]["pages"][0]["image"] = path
@@ -548,7 +548,7 @@ def test_deploy_resets_launcher_state_and_creates_state_dir(tmp_path, cfg, monke
     assert json.loads(written["state"]) == {"page": 0, "running": "launcher"}
     assert ":/state" in [c[-1] for c in calls if "mkdir" in c]
     copy_cmd = [c for c in calls if "cp" in c][0]
-    assert copy_cmd.index(":/state/launcher.json") > copy_cmd.index(":/henniefrancis/config/badge.json")  # last
+    assert copy_cmd.index(":/state/launcher.json") > copy_cmd.index(":/badge/config/badge.json")  # last
     assert copy_cmd.count("+") == copy_cmd.count("cp") - 1
 
 
@@ -560,7 +560,7 @@ def test_deploy_keep_state_does_not_touch_launcher_state(tmp_path, cfg, monkeypa
 
 # ------------------------------------------------------------- --kind photo
 def photo_fixture(path):
-    """108x146 colour 'portrait' with a white border, like the old hennie.png."""
+    """108x146 colour 'portrait' with a white border, like a sample photo."""
     im = Image.new("RGB", (108, 146), (255, 255, 255))
     for y in range(20, 130):
         for x in range(14, 94):
@@ -723,9 +723,9 @@ def test_validator_fails_qr_title_that_does_not_fit_the_bar(tmp_path, cfg):
 def test_validator_accepts_the_measured_device_titles(tmp_path, cfg):
     c = real_looking(cfg)
     c["sections"]["a"]["pages"][1].update(title="Contact Details", text="Save my Contact Details")
-    c["sections"]["a"]["pages"][2].update(title="My Personal Website", text="Visit my website")
-    c["sections"]["b"]["pages"][2].update(title="AWS Builder Center", text="Visit my Builder Profile")
-    c["sections"]["b"]["pages"][1]["header"] = "AWS Community Builder - Serverless"
+    c["sections"]["a"]["pages"][2].update(title="My Website", text="Visit my website")
+    c["sections"]["b"]["pages"][2].update(title="Your Company", text="Visit our website")
+    c["sections"]["b"]["pages"][1]["header"] = "Example Community Day - Serverless"
     errors, report = vc.validate(str(make_config_dir(tmp_path, c)))
     assert errors == []
 
@@ -756,9 +756,9 @@ def test_validator_warns_non_ascii_in_qr_title_and_text(tmp_path, cfg):
 def test_example_config_new_qr_shape(cfg):
     pages = cfg["sections"]["a"]["pages"]
     assert (pages[1]["title"], pages[1]["text"]) == ("Contact Details", "Save my Contact Details")
-    assert (pages[2]["title"], pages[2]["text"]) == ("My Personal Website", "Visit my website")
+    assert (pages[2]["title"], pages[2]["text"]) == ("My Website", "Visit my website")
     b = cfg["sections"]["b"]["pages"][2]
-    assert (b["title"], b["text"]) == ("AWS Builder Center", "Visit my Builder Profile")
+    assert (b["title"], b["text"]) == ("Your Company", "Visit our website")
     p = cfg["sections"]["p"]["pages"]
     assert (p[0]["title"], p[0]["text"]) == ("Project", "Build your own badge")
     assert (p[2]["title"], p[2]["text"]) == ("Project", "Get a Badger 2040")
@@ -791,51 +791,46 @@ def test_extra_section_qr_pages_are_reported(tmp_path, cfg):
 
 def test_validator_warns_for_wrapper_without_matching_section(tmp_path, cfg):
     c = real_looking(cfg)
-    del c["sections"]["dotcore"]
+    del c["sections"]["work"]
     errors, report = vc.validate(str(make_config_dir(tmp_path, c)))
     assert errors == []
-    warn = [r for r in report if r.startswith("warning:") and "dotcore.py" in r]
+    warn = [r for r in report if r.startswith("warning:") and "work.py" in r]
     assert warn and "not in the config" in warn[0]
-    assert not any("awscommza.py" in r for r in report)
+    assert not any("company.py" in r for r in report)
 
 
 def test_wrapper_scan_finds_the_shipped_wrappers():
     found = vc.wrapper_sections()
-    for name in ("personal", "aws", "microsoft", "project", "awscommza", "dotcore", "devconf"):
+    for name in ("profile", "company", "event", "project", "work"):
         assert name + ".py" in found
-    assert found["awscommza.py"] == "awscommza" and found["personal.py"] == "a" and found["project.py"] == "p"
-    assert "hennie.py" not in found and "summit.py" not in found
+    assert found["work.py"] == "work" and found["profile.py"] == "a" and found["project.py"] == "p"
+    assert found["company.py"] == "b" and found["event.py"] == "c"
+    assert len(found) == 5
 
 
-def test_deploy_plan_includes_new_wrappers_and_optional_icons(tmp_path, cfg):
+def test_deploy_plan_includes_wrappers_and_icons(tmp_path, cfg):
     d = make_config_dir(tmp_path, real_looking(cfg))
     plan = {r: l for l, r in deploy.build_plan(str(d))}
-    for app in ("awscommza", "dotcore", "devconf"):
-        assert "/henniefrancis/%s.py" % app in plan
-        assert plan["/henniefrancis/%s.py" % app].endswith(os.path.join("device", "henniefrancis", app + ".py"))
-    assert "/henniefrancis/icon-awscommza.png" not in plan           # absent icons are simply skipped
-    assert "/henniefrancis/icon-dotcore.png" not in plan
-    assert "/henniefrancis/icon-devconf.png" not in plan
-    for n in ("icon-awscommza.png", "icon-dotcore.png", "icon-devconf.png"):
-        Image.new("1", (52, 52), 1).save(d / "icons" / n)
+    for app in ("profile", "company", "event", "project", "work"):
+        assert "/badge/%s.py" % app in plan
+        assert plan["/badge/%s.py" % app].endswith(os.path.join("device", "badge", app + ".py"))
+    assert plan["/badge/icon-work.png"].startswith(ROOT)                  # repo default icon
+    Image.new("1", (52, 52), 1).save(d / "icons" / "icon-work.png")
     plan = {r: l for l, r in deploy.build_plan(str(d))}
-    assert plan["/henniefrancis/icon-awscommza.png"] == str(d / "icons" / "icon-awscommza.png")
-    assert plan["/henniefrancis/icon-dotcore.png"] == str(d / "icons" / "icon-dotcore.png")
-    assert plan["/henniefrancis/icon-devconf.png"] == str(d / "icons" / "icon-devconf.png")
+    assert plan["/badge/icon-work.png"] == str(d / "icons" / "icon-work.png")   # config overrides repo
 
 
-def test_missing_awscommza_dotcore_icons_do_not_fail_validate_or_deploy(tmp_path, cfg, monkeypatch, capsys):
+def test_missing_work_icon_in_config_does_not_fail_validate_or_deploy(tmp_path, cfg, monkeypatch, capsys):
     monkeypatch.setattr(subprocess, "run", lambda *a, **k: pytest.fail("must not run mpremote"))
     d = make_config_dir(tmp_path, real_looking(cfg))
     errors, _ = vc.validate(str(d))
     assert errors == []
     assert deploy.main(["--config", str(d), "--dry-run"]) == 0
     out = capsys.readouterr().out
-    assert "awscommza.py -> /henniefrancis/awscommza.py" in out.replace("\\", "/").replace("device/henniefrancis/", "")
+    assert "work.py -> /badge/work.py" in out.replace("\\", "/").replace("device/badge/", "")
 
 
 def test_deploy_copies_wrappers_in_one_mpremote_chain(tmp_path, cfg, monkeypatch):
-    calls, _ = None, None
     d = make_config_dir(tmp_path, real_looking(cfg))
     seen = []
 
@@ -846,14 +841,14 @@ def test_deploy_copies_wrappers_in_one_mpremote_chain(tmp_path, cfg, monkeypatch
     monkeypatch.setattr(subprocess, "run", fake_run)
     assert deploy.main(["--config", str(d), "--port", "COM3"]) == 0
     copy_cmd = [c for c in seen if "cp" in c][0]
-    assert all(":/henniefrancis/%s.py" % n in copy_cmd for n in ("awscommza", "dotcore", "devconf"))
+    assert all(":/badge/%s.py" % n in copy_cmd for n in ("profile", "company", "event", "project", "work"))
 
 
 def test_qr_title_aws_community_south_africa_fits_on_every_qr_size(tmp_path, cfg):
     # 26 characters, about 130 px estimated; the QR bar fit is about 150 px or more for 29 to 57 modules
     c = real_looking(cfg)
-    c["sections"]["work"]["pages"][1]["title"] = "AWS Community South Africa"
-    c["sections"]["a"]["pages"][1]["title"] = "AWS Community South Africa"      # the 57-module vCard page, tightest bar
+    c["sections"]["work"]["pages"][1]["title"] = "Example Community Networks"
+    c["sections"]["a"]["pages"][1]["title"] = "Example Community Networks"      # the 57-module vCard page, tightest bar
     errors, _ = vc.validate(str(make_config_dir(tmp_path, c)))
     assert errors == []
     for modules in range(21, 65):
@@ -882,8 +877,8 @@ def one_badge(tmp_path, cfg, n=[0], **fields):
 
 
 def test_validator_accepts_the_owner_badge_values(tmp_path, cfg):
-    errors, report = one_badge(tmp_path, cfg, header="AWS Community South Africa", name="Hennie Francis",
-                               title="Chief Executive Officer", website="awscommunity.co.za")
+    errors, report = one_badge(tmp_path, cfg, header="Example Community Networks", name="Jordan Example",
+                               title="Chief Executive Officer", website="example-site.co.uk")
     assert errors == []
     assert not [r for r in report if r.startswith("warning:")]
 
@@ -897,7 +892,7 @@ def test_validator_fails_badge_header_that_does_not_fit_the_full_width_bar(tmp_p
 
 
 def test_validator_fails_name_that_does_not_fit_at_scale_three(tmp_path, cfg):
-    errors, _ = one_badge(tmp_path, cfg, name="Hennie Francis")         # 201 px fits
+    errors, _ = one_badge(tmp_path, cfg, name="Jordan Example")         # 201 px fits
     assert errors == []
     errors, _ = one_badge(tmp_path, cfg, name="N" * 25)                 # 360 px at scale 3
     assert any("name" in e and "scale 3" in e and "does not fit" in e for e in errors)
@@ -908,7 +903,7 @@ def test_validator_warns_when_title_or_website_is_wider_than_the_screen(tmp_path
     assert errors == []
     assert any("title" in r and "wider than the screen" in r for r in report)
     assert any("website" in r and "wider than the screen" in r for r in report)
-    errors, report = one_badge(tmp_path, cfg, title="Chief Executive Officer", website="dotcoresolutions.io")
+    errors, report = one_badge(tmp_path, cfg, title="Chief Executive Officer", website="example-solutions.io")
     assert not [r for r in report if "wider than the screen" in r]      # running over the image is allowed
 
 
@@ -922,9 +917,9 @@ def test_validator_rejects_old_badge_shape(tmp_path, cfg):
 def test_validator_warns_when_image_w_does_not_match_the_png_width(tmp_path, cfg):
     c = real_looking(cfg)
     page = c["sections"]["a"]["pages"][0]
-    page.update(image="/images/me.png", image_w=104)
+    page.update(image="/images/narrow.png", image_w=104)
     d = make_config_dir(tmp_path, c)
-    Image.new("1", (86, 19), 1).save(d / "images" / "me.png")
+    Image.new("1", (86, 19), 1).save(d / "images" / "narrow.png")
     errors, report = vc.validate(str(d))
     assert errors == []
     assert any("image_w is 104" in r and "86 px wide" in r for r in report)

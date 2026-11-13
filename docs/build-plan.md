@@ -4,40 +4,40 @@ Status: built and tested on a PC (host tests with fake hardware modules). On-dev
 
 ## Summary
 
-A set of apps on the Badger OS launcher. Inside the badge, A, B and C pick a section (Personal, AWS, Microsoft by default) and Up/Down page through that section, wrapping at the ends. All content comes from one JSON config. A **project** app is a fourth section (`p`) with a QR code to this repository (whose README teaches people to build their own), an about-this-badge text page, and a QR to the hardware. Personal details (the vCard) and trademarked logos are kept in a private location of your choice and copied to the badge by `tools/deploy.py`; they are never committed here.
+A set of apps on the Badger OS launcher. Inside the badge, A, B and C pick a section (Profile, Company, Event by default) and Up/Down page through that section, wrapping at the ends. All content comes from one JSON config. A **project** app is a fourth section (`p`) with a QR code to this repository (whose README teaches people to build their own), an about-this-badge text page, and a QR to the hardware. Personal details (the vCard) and trademarked logos are kept in a private location of your choice and copied to the badge by `tools/deploy.py`; they are never committed here.
 
 ## Decisions
 
 | Topic | Decision |
 |---|---|
-| A, Personal | p1 photo badge, p2 vCard QR, p3 QR to a website |
-| B, AWS | p1 logo, p2 badge page with a header bar, p3 QR to a profile |
-| C, Microsoft | p1 logo (one page, Up/Down do nothing) |
+| A, Profile | p1 photo badge, p2 vCard QR, p3 QR to a website |
+| B, Company | p1 logo, p2 badge page with a header bar, p3 QR to a profile |
+| C, Event | p1 logo, p2 QR to a schedule |
 | vCard | vCard 3.0: N, FN, ORG, TITLE, TEL, EMAIL, URL (website), URL (LinkedIn). Text values escaped per RFC 2426; URL values are URIs so they are not text-escaped; control characters, DEL, C1 characters, U+2028 and U+2029 are stripped from every field |
 | QR pages | QR as tall as fits with whole-pixel modules, at least 2 px per module, right aligned; a black house title bar and a centred body text only left of the code, never overlapping the code box (4 px gap); no page numbers |
 | QR error correction | `qrcode.QRCode(qrcode.ECC_LOW)`. A 268-byte 7-field vCard is 65 modules at the default Medium (1 px per module, too small) and 57 modules at Low (2 px per module, 114 px) |
 | QR border | optional top-level `"qr_border"`, default 0: no quiet-zone padding, so the code is as large as density allows (`px = 128 // modules`, centred vertically, right aligned; the title bar stops 4 px before it). 1 to 4 adds that many modules per side (the code may shrink); `"auto"` adds the largest border that keeps the same px per module. The 2 px minimum applies to the bordered size. ISO/IEC 18004 recommends a 4-module quiet zone; the owner chose full-size codes, tested scanning on the badge, and can raise `qr_border` if a scan fails (ADR-005) |
 badge pages (full width, over the photo). Titles are never shrunk: the validator fails one that does not fit, and the device cuts with `..` only as a last resort. QR body text: whole bitmap8 scale 2, else 1, wrapped to the left area, centred horizontally and in the space below the bar |
-| Extra sections | besides the required `a`, `b`, `c`, `p`, the config may hold sections whose keys match `^[a-z][a-z0-9_]{1,15}$`; a wrapper app with the same name opens one (`awscommza`, `dotcore` ship in the repo; the example config has a generic `work`). A, B, C inside any section jump to a, b, c; Up/Down wrap (also for 2-page sections). A missing section shows the error page; the validator warns about a wrapper without a section |
+| Extra sections | besides the required `a`, `b`, `c`, `p`, the config may hold sections whose keys match `^[a-z][a-z0-9_]{1,15}$`; a wrapper app with the same name opens one (`work` ships in the repo and the example config has a matching `work` section). A, B, C inside any section jump to a, b, c; Up/Down wrap (also for 2-page sections). A missing section shows the error page; the validator warns about a wrapper without a section |
 | Text rendering | every page uses the bitmap8 font at whole scales only; no vector fonts. Title bars centre their text. Badge pages (fixed layout): clear to white; photo at x = 296 - `image_w`, y = `image_y`, no border; full-width black header bar (16 px) over the photo with the centred header; then black text left aligned at x 2 over the photo: name scale 3 at y 24, title scale 2 at y 92, website scale 2 at y 110; no divider. The validator fails a header or name that does not fit and warns about over-wide title or website text and an `image_w` that does not match the PNG |
 | Paging | Up/Down wrap; a one-page section ignores them; a press that changes nothing causes no refresh |
 | State | last section and page saved in `/state/badge.json` and restored on wake; the launcher's `running` entry follows the section |
 | Return | A+C returns to the launcher (Badger OS convention) |
 | Errors | missing or bad config, missing image, QR too dense, missing section: an on-screen error page, never a crash. Any button retries |
-| Launcher | the order is owner-defined (ADR-006): page 1 `personal`, `aws`, `awscommza`; page 2 `project`, `devconf`, `dotcore`; page 3 `microsoft`; then any other apps. `personal`, `aws`, `microsoft` and `project` are thin wrapper apps that open the shared code at a section. The owner accepted that launcher C on page 1 opens `awscommza`, while C inside the badge still means Microsoft. Apps missing from the badge are skipped |
+| Launcher | page 1 `profile`, `company`, `event`; page 2 `project`, `work`; then any other apps. `profile`, `company`, `event`, `project` and `work` are thin wrapper apps that open the shared code at a section, so launcher A, B and C match A, B and C inside the badge. Apps missing from the badge are skipped |
 | Deploy state | after copying, deploy resets `/state/launcher.json` so the badge boots to launcher page 1 (`--keep-state` skips this) |
-| Config on the badge | `/henniefrancis/config/badge.json`; shared code in `/lib/badgekit.py` (the launcher treats every .py in `/henniefrancis` as an app) |
+| Config on the badge | `/badge/config/badge.json`; shared code in `/lib/badgekit.py` (the launcher treats every .py in `/badge` as an app) |
 
 ## Architecture
 
 ```
  your private location                         this public repo
  +- badge.json  (real details)                 device/   (mirrors the badge filesystem)
- +- images/   aws.png, microsoft.png, ...        launcher.py
- +- icons/    icon-aws.png, ...                  lib/badgekit.py
-          |                                      henniefrancis/{personal,aws,microsoft,project}.py
-          |                                        + icon-{personal,aws,microsoft,project}.png (52x52)
-          |                                      images/{hennie,aws,microsoft}.png (aws, microsoft are placeholders)
+ +- images/   company.png, event.png, ...         launcher.py
+ +- icons/    icon-company.png, ...              lib/badgekit.py
+          |                                      badge/{profile,company,event,project}.py
+          |                                        + icon-{profile,company,event,project}.png (52x52)
+          |                                      images/{me,company,event}.png (company, event are placeholders)
           v                                    config/badge.example.json (placeholders only)
    tools/deploy.py --config <folder>           tools/ deploy, validate_config, convert_image,
           |                                          qr_capacity, make_placeholders

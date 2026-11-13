@@ -31,8 +31,8 @@ def cfg():
 def env(monkeypatch, tmp_path):
     monkeypatch.setattr(bk.time, "sleep", lambda s: None)
     monkeypatch.setattr(bk, "CONFIG_PATH", str(tmp_path / "badge.json"))
-    pngdec.FILES.update({"/images/hennie.png": (108, 146), "/images/aws.png": (296, 128),
-                         "/images/microsoft.png": (296, 128)})
+    pngdec.FILES.update({"/images/me.png": (104, 128), "/images/company.png": (296, 128),
+                         "/images/event.png": (296, 128)})
     hw.halt_limit = 3
     yield
 
@@ -136,7 +136,7 @@ def test_validator_flags_missing_launcher_section(cfg, tmp_path):
 
 
 def test_missing_image_file_shows_error(cfg):
-    pngdec.FILES.pop("/images/aws.png")
+    pngdec.FILES.pop("/images/company.png")
     with open(bk.CONFIG_PATH, "w") as f:
         json.dump(cfg, f)
     app = make("b")
@@ -185,7 +185,7 @@ def test_wrap_terminates_for_tiny_widths(w):
 
 
 def test_fit_title_terminates_tiny_width():
-    t, s = bk.fit_title(lambda s, sc=1: len(s) * 8 * sc, "Personal", 4)
+    t, s = bk.fit_title(lambda s, sc=1: len(s) * 8 * sc, "Profile", 4)
     assert s == 1
 
 
@@ -234,14 +234,14 @@ def test_two_buttons_held_at_wake_is_deterministic(cfg):
 
 # ---- deploy / validator agreement -----------------------------------------
 def test_validator_and_deploy_agree_on_image_location(cfg, tmp_path):
-    cfg["sections"]["c"]["pages"][0]["image"] = "/elsewhere/microsoft.png"
+    cfg["sections"]["c"]["pages"][0]["image"] = "/elsewhere/event.png"
     d = tmp_path / "c"
     d.mkdir()
     (d / "badge.json").write_text(json.dumps(cfg))
     errors, _ = vc.validate(str(d), allow_placeholders=True)
     plan = deploy.build_plan(str(d))
     remote = {r for _, r in plan}
-    assert errors or "/elsewhere/microsoft.png" in remote
+    assert errors or "/elsewhere/event.png" in remote
 
 
 def test_port_regex_rejects_trailing_newline():
@@ -259,7 +259,7 @@ def test_deploy_refuses_placeholder_config(tmp_path, capsys):
 
 # ---- round 5 (added by QA) ------------------------------------------------
 LAUNCHER_SRC = open(os.path.join(ROOT, "device", "launcher.py"), encoding="utf-8").read()
-SEVEN_GONE = ("hennie", "summit", "clock", "help", "image", "info", "socials")
+SEVEN_GONE = ("clock", "help", "image", "info", "socials")
 
 
 def _launcher_order(all_files):
@@ -277,11 +277,11 @@ def test_launcher_ordering_lists_exclude_deleted_apps():
         assert '"%s"' % gone not in code
 
 
-def test_launcher_with_only_the_seven_apps_has_three_pages_last_has_one():
+def test_launcher_with_five_apps_plus_two_extras_has_three_pages_last_has_one():
     import math
-    ns, _ = _launcher_order(["dotcore", "microsoft", "aws", "project", "personal", "devconf", "awscommza"])
-    lst = ns["henniefrancis"]
-    assert lst == ["personal", "aws", "awscommza", "project", "devconf", "dotcore", "microsoft"]
+    ns, _ = _launcher_order(["work", "event", "company", "project", "profile", "socials", "info"])
+    lst = ns["apps"]
+    assert lst == ["profile", "company", "event", "project", "work", "socials", "info"]
     assert math.ceil(len(lst) / 3) == 3 and len(lst[6:]) == 1
 
 
@@ -358,7 +358,7 @@ def test_section_p_single_page_ignores_updown_and_abc_jump(cfg):
 
 
 # ---- round 8: extra sections (added by QA) --------------------------------
-def _extra_cfg(cfg, key="awscommza", n=2):
+def _extra_cfg(cfg, key="extra", n=2):
     cfg["sections"][key] = {"title": "Extra", "pages": [
         {"type": "text", "header": "P%d" % i, "lines": ["x"]} for i in range(n)]}
     with open(bk.CONFIG_PATH, "w") as f:
@@ -367,9 +367,9 @@ def _extra_cfg(cfg, key="awscommza", n=2):
 
 def test_extra_section_wraps_both_ways_and_abc_jump(cfg):
     _extra_cfg(cfg)
-    app = make("awscommza")
+    app = make("extra")
     app.start()
-    assert (app.section, app.page) == ("awscommza", 0)
+    assert (app.section, app.page) == ("extra", 0)
     app.handle("up")
     assert app.page == 1
     app.handle("down")
@@ -382,37 +382,37 @@ def test_extra_section_wraps_both_ways_and_abc_jump(cfg):
         app.handle(k)
         assert (app.section, app.page) == (k, 0)
         app.handle("up")
-        app.section, app.page = "awscommza", 1
+        app.section, app.page = "extra", 1
     # state survives wake
-    app.section, app.page = "awscommza", 1
+    app.section, app.page = "extra", 1
     app._save()
     hw.reset_wake = None
-    app2 = make("awscommza")
+    app2 = make("extra")
     app2.start()
-    assert (app2.section, app2.page) == ("awscommza", 1)
+    assert (app2.section, app2.page) == ("extra", 1)
 
 
 def test_extra_section_missing_shows_error(cfg):
     with open(bk.CONFIG_PATH, "w") as f:
         json.dump(cfg, f)
-    app = make("dotcore")
+    app = make("extra")
     app.start()
     assert any("not in the config" in t for t in app.display.texts())
 
 
 @pytest.mark.parametrize("key", ["A", "x", "1ab", "ab-c", "a" * 17, "", "UP", "ab cd"])
 def test_bad_extra_keys_rejected(key, cfg):
-    cfg["sections"][key] = {"title": "T", "pages": [{"type": "image", "image": "/images/aws.png"}]}
+    cfg["sections"][key] = {"title": "T", "pages": [{"type": "image", "image": "/images/company.png"}]}
     with pytest.raises(bk.ConfigError):
         bk.validate_config(cfg)
 
 
 def test_section_title_limit_vs_page_title_limit_documented_and_consistent(cfg):
-    t = "AWS Community South Africa"
+    t = "Example Community Networks"
     cfg["sections"]["a"]["title"] = t
     with pytest.raises(bk.ConfigError):
         bk.validate_config(cfg)          # section title max 20 (README says so)
-    cfg["sections"]["a"]["title"] = "Personal"
+    cfg["sections"]["a"]["title"] = "Profile"
     cfg["sections"]["a"]["pages"][2]["title"] = t
     bk.validate_config(cfg)              # page title max 40
 
@@ -549,17 +549,17 @@ def test_badge_pixels_only_bar_text_divider_are_black(cfg):
 
 # ---- round 14: three extra sections (added by QA) ---------------------------
 def _three_extras(cfg):
-    img = {"type": "image", "image": "/images/aws.png"}
-    qr = {"type": "qr", "title": "Site", "text": "Visit", "url": "https://awscommunity.co.za"}
-    badge = {"type": "badge", "header": "Dotcore", "name": "Hennie Francis", "title": "CEO", "image": "/images/hennie.png",
-             "image_w": 108}
-    cfg["sections"]["awscommza"] = {"title": "AWS Community", "pages": [img, qr]}
-    cfg["sections"]["dotcore"] = {"title": "Dotcore", "pages": [img, badge, qr]}
-    cfg["sections"]["devconf"] = {"title": "Dev Conf", "pages": [img, qr]}
+    img = {"type": "image", "image": "/images/company.png"}
+    qr = {"type": "qr", "title": "Site", "text": "Visit", "url": "https://example-site.co.uk"}
+    badge = {"type": "badge", "header": "Header", "name": "Jordan Example", "title": "CEO", "image": "/images/me.png",
+             "image_w": 104}
+    cfg["sections"]["work"] = {"title": "Work", "pages": [img, qr]}
+    cfg["sections"]["alpha"] = {"title": "Alpha", "pages": [img, badge, qr]}
+    cfg["sections"]["beta"] = {"title": "Beta", "pages": [img, qr]}
     return cfg
 
 
-@pytest.mark.parametrize("key,n", [("awscommza", 2), ("dotcore", 3), ("devconf", 2)])
+@pytest.mark.parametrize("key,n", [("work", 2), ("alpha", 3), ("beta", 2)])
 def test_extra_sections_wrap_abc_and_wake(key, n, cfg):
     with open(bk.CONFIG_PATH, "w") as f:
         json.dump(_three_extras(cfg), f)
@@ -587,8 +587,9 @@ def test_extra_sections_wrap_abc_and_wake(key, n, cfg):
         assert (app.section, app.page) == (k, 0)
 
 
-@pytest.mark.parametrize("key", ["awscommza", "dotcore", "devconf"])
+@pytest.mark.parametrize("key", ["work", "alpha", "beta"])
 def test_extra_section_missing_errors(key, cfg):
+    del cfg["sections"]["work"]
     with open(bk.CONFIG_PATH, "w") as f:
         json.dump(cfg, f)
     app = make(key)
@@ -601,16 +602,15 @@ def test_wrappers_open_their_own_section(monkeypatch):
     monkeypatch.setattr(bk, "run_section", lambda k: seen.append(k))
     import sys
     sys.modules["badgekit"] = bk
-    for name in ("personal", "aws", "microsoft", "project", "awscommza", "dotcore", "devconf"):
-        exec(open(os.path.join(ROOT, "device", "henniefrancis", name + ".py")).read(), {})
-    assert seen == ["a", "b", "c", "p", "awscommza", "dotcore", "devconf"]
+    for name in ("profile", "company", "event", "project", "work"):
+        exec(open(os.path.join(ROOT, "device", "badge", name + ".py")).read(), {})
+    assert seen == ["a", "b", "c", "p", "work"]
 
 def test_launcher_maps_all_wrappers_and_sets_launched_flag():
     src = open(os.path.join(ROOT, "device", "launcher.py"), encoding="utf-8").read()
     ns = {}
     exec(src[src.index("SECTION_APPS = {"):src.index("# Approximate center")], ns)
-    assert ns["SECTION_APPS"] == {"personal": "a", "aws": "b", "microsoft": "c", "project": "p",
-                                  "awscommza": "awscommza", "dotcore": "dotcore", "devconf": "devconf"}
+    assert ns["SECTION_APPS"] == {"profile": "a", "company": "b", "event": "c", "project": "p", "work": "work"}
     assert '"page": 0, "launched": True' in src
 
 
@@ -624,10 +624,10 @@ def test_validate_and_deploy_three_extras_clean(cfg, tmp_path, capsys):
     assert errors == []
     assert not [r for r in report if "extra section" in r or "not in the config" in r]
     plan = {r for _, r in deploy.build_plan(str(d))}
-    for n in ("awscommza", "dotcore", "devconf"):
-        assert "/henniefrancis/%s.py" % n in plan
+    for n in deploy.APPS:
+        assert "/badge/%s.py" % n in plan
     assert deploy.main(["--config", str(d), "--allow-placeholders", "--allow-placeholder-images", "--dry-run"]) == 0
-    assert "devconf.py" in capsys.readouterr().out
+    assert "work.py" in capsys.readouterr().out
 
 
 def test_image_page_centred_on_white(cfg):
@@ -646,9 +646,9 @@ def test_image_page_centred_on_white(cfg):
 # ---- badge layout (replaces the old column/divider layout tests when the badge page was redesigned)
 def test_badge_layout_bounds_for_all_combinations(cfg):
     import test_badgekit_app as ta
-    for header in ("H", "AWS Community Builder - Serverless"):
-        for lines in ([], ["a"], ["Chief Executive Officer", "awscommunity.co.za"]):
-            for name in ("Hennie Francis", "N" * 40, "x"):
+    for header in ("H", "Example Community Day - Serverless"):
+        for lines in ([], ["a"], ["Chief Executive Officer", "example-site.co.uk"]):
+            for name in ("Jordan Example", "N" * 40, "x"):
                 app = ta.badge_cfg(cfg, name, lines, header)
                 for c in [c for c in app.display.calls if c[0] == "text"]:
                     _, t, x, y, sc = c
@@ -661,7 +661,7 @@ def test_badge_layout_bounds_for_all_combinations(cfg):
 def test_badge_layout_fuzz_stays_on_screen_with_fixed_positions(per, cfg):
     import test_badgekit_app as ta
     rnd = random.Random(7)
-    words = ["Chief", "Executive", "Officer", "a", "dotcoresolutions.io", "x" * 40, "W" * 30, "AWS"]
+    words = ["Chief", "Executive", "Officer", "a", "example-solutions.io", "x" * 40, "W" * 30, "ACME"]
     for _ in range(80):
         fields = {
             "header": " ".join(rnd.choice(words) for _ in range(rnd.randint(1, 3)))[:40],
@@ -744,7 +744,7 @@ def test_badge_missing_optional_fields(cfg):
                                  {"image_w": 1.5}, {"image_w": True}, {"image_y": -1}, {"image_y": 129},
                                  {"header": ""}, {"name": ""}, {"title": ""}, {"website": 5}, {"header": "h" * 41}])
 def test_badge_schema_rejects(bad, cfg):
-    page = {"type": "badge", "header": "H", "name": "N", "image": "/images/hennie.png"}
+    page = {"type": "badge", "header": "H", "name": "N", "image": "/images/me.png"}
     page.update(bad)
     cfg["sections"]["a"]["pages"][0] = page
     with pytest.raises(bk.ConfigError):

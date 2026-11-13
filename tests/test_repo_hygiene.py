@@ -46,7 +46,7 @@ def test_real_config_is_not_tracked_and_is_ignored():
     assert "config/badge.json" not in tracked
     assert not [t for t in tracked if t.endswith("/badge.json") or t == "badge.json"]
     assert git("check-ignore", "-q", "config/badge.json").returncode == 0
-    assert git("check-ignore", "-q", "config/images/aws.png").returncode == 0
+    assert git("check-ignore", "-q", "config/images/company.png").returncode == 0
 
 
 def test_real_config_file_is_not_in_the_working_tree_by_accident():
@@ -101,7 +101,7 @@ def test_device_code_is_micropython_friendly():
     device = os.path.join(ROOT, "device")
     for base, _, files in os.walk(device):
         for n in files:
-            if not n.endswith(".py") or n in ("hennie.py", "summit.py"):
+            if not n.endswith(".py"):
                 continue
             path = os.path.join(base, n)
             with open(path, encoding="utf-8") as f:
@@ -112,50 +112,51 @@ def test_device_code_is_micropython_friendly():
 
 
 def test_wrapper_apps_only_call_badgekit():
-    apps = os.path.join(ROOT, "device", "henniefrancis")
-    expect = {"personal": 'run_section("a")', "aws": 'run_section("b")',
-              "microsoft": 'run_section("c")', "project": 'run_section("p")',
-              "awscommza": 'run_section("awscommza")', "dotcore": 'run_section("dotcore")',
-              "devconf": 'run_section("devconf")'}
+    apps = os.path.join(ROOT, "device", "badge")
+    expect = {"profile": 'run_section("a")', "company": 'run_section("b")',
+              "event": 'run_section("c")', "project": 'run_section("p")',
+              "work": 'run_section("work")'}
     for name, call in expect.items():
         with open(os.path.join(apps, name + ".py"), encoding="utf-8") as f:
             text = f.read()
         assert "import badgekit" in text and call in text
+        assert "/badge/config/badge.json" in text
+    assert sorted(n for n in os.listdir(apps) if n.endswith(".py")) == sorted(n + ".py" for n in expect)
 
 
-def test_launcher_order_is_owner_defined():
+def test_launcher_order_is_generic():
     with open(os.path.join(ROOT, "device", "launcher.py"), encoding="utf-8") as f:
         text = f.read()
-    assert 'first_page = ["personal", "aws", "awscommza"]' in text
-    assert 'second_page = ["project", "devconf", "dotcore"]' in text
-    assert 'third_page = ["microsoft"]' in text
-    assert 'APP_DIR = "/henniefrancis"' in text
-    assert '"microsoft": "c"' in text and '"aws": "b"' in text and '"personal": "a"' in text
-    assert '"project": "p"' in text
-    assert '"awscommza": "awscommza"' in text and '"dotcore": "dotcore"' in text and '"devconf": "devconf"' in text
+    assert 'first_page = ["profile", "company", "event"]' in text
+    assert 'second_page = ["project", "work"]' in text
+    assert "third_page = []" in text
+    assert 'APP_DIR = "/badge"' in text
+    assert '"profile": "a"' in text and '"company": "b"' in text and '"event": "c"' in text
+    assert '"project": "p"' in text and '"work": "work"' in text
     ordering = text[text.index("first_page ="):text.index("# Section apps")]
     for gone in ("hennie", "summit", "clock", "help", "image"):
         assert '"%s"' % gone not in ordering
     assert "[x for x in ordered if x in all_files]" in text          # missing apps are skipped
-    assert "launcher C" in text and "awscommza" in text               # the C difference is documented
 
 
 def test_launcher_order_logic_with_missing_and_extra_apps():
     with open(os.path.join(ROOT, "device", "launcher.py"), encoding="utf-8") as f:
         text = f.read()
     code = text[text.index("first_page ="):text.index("# Section apps")]
-    ns = {"all_files": ["socials", "info", "personal", "aws", "awscommza", "microsoft", "project", "devconf", "hennie"]}
+    ns = {"all_files": ["socials", "info", "profile", "company", "event", "project", "work", "badge"]}
     exec(code, ns)
-    assert ns["henniefrancis"] == ["personal", "aws", "awscommza", "project", "devconf", "microsoft",
-                                   "socials", "info", "hennie"]
+    assert ns["apps"] == ["profile", "company", "event", "project", "work", "socials", "info", "badge"]
+    ns = {"all_files": ["info", "event", "profile"]}                  # missing apps are skipped
+    exec(code, ns)
+    assert ns["apps"] == ["profile", "event", "info"]
 
 
-def test_readme_and_plan_document_launcher_c_difference():
+def test_readme_and_plan_use_the_generic_namespace():
     for rel in ("README.md", "docs/build-plan.md"):
         with open(os.path.join(ROOT, rel), encoding="utf-8") as f:
             text = f.read()
-        assert "awscommza" in text and "Microsoft" in text and "C" in text
-        assert "launcher C" in text, rel
+        assert "/badge/config/badge.json" in text, rel
+        assert "launcher C" not in text, rel
 
 
 # ---- restored (dropped by mistake when the launcher-order test was rewritten)
@@ -185,14 +186,25 @@ def test_gitignore_blocks_dumps_and_firmware():
 
 @pytest.mark.skipif(not have_git, reason="needs a git checkout")
 @pytest.mark.parametrize("name", ["x.uf2", "badger2040-full-flash.bin", "flash-dump-1.img", "dump/flash-dump.txt",
-                                  "config/badge.json", "config/images/aws.png", "config/icons/icon-aws.png"])
+                                  "config/badge.json", "config/images/company.png", "config/icons/icon-company.png"])
 def test_git_ignores_sensitive_names(name):
     assert git("check-ignore", "-q", name).returncode == 0
 
 
-def test_summit_has_no_third_party_email():
-    with open(os.path.join(ROOT, "device", "henniefrancis", "summit.py"), encoding="utf-8", errors="replace") as f:
-        assert not EMAIL_RE.findall(f.read())
+def test_no_branded_or_personal_names_in_tracked_files():
+    banned = re.compile(r"awscommza|dotcore|devconf|microsoft|hennie|summit|" r"\baws\b", re.IGNORECASE)
+    allowed_urls = re.compile(r"github\.com/henniefrancis/")
+    this = os.path.join("tests", "test_repo_hygiene.py")
+    offenders = []
+    for p in repo_text_files():
+        rel = os.path.relpath(p, ROOT)
+        if rel == this or rel in ("LICENSE", "THIRD_PARTY_NOTICES.md"):
+            continue
+        with open(p, encoding="utf-8", errors="replace") as f:
+            for n, line in enumerate(f, 1):
+                if banned.search(allowed_urls.sub("", line)):
+                    offenders.append("%s:%d" % (rel, n))
+    assert offenders == []
 
 
 def test_public_docs_have_no_private_names_or_local_paths():
@@ -206,7 +218,7 @@ def test_public_docs_have_no_private_names_or_local_paths():
 
 
 def test_pimoroni_notice_on_derived_files():
-    for rel in ("device/launcher.py", "device/henniefrancis/hennie.py", "device/henniefrancis/summit.py"):
+    for rel in ("device/launcher.py",):
         with open(os.path.join(ROOT, rel), encoding="utf-8") as f:
             head = f.read(400)
         assert "Copyright (c) Pimoroni Ltd" in head and "MIT" in head, rel
@@ -227,10 +239,10 @@ def test_launcher_clamps_saved_page_after_max_page():
     start = text.index("MAX_PAGE = math.ceil")
     snippet = text[start:text.index("WIDTH = 296")]
     for saved, expect in ((0, 0), (1, 1), (2, 2), (3, 0), (99, 0), (-1, 0), ("2", 0), (None, 0), (True, 0), (False, 0)):
-        ns = {"math": __import__("math"), "henniefrancis": ["a"] * 8, "state": {"page": saved}}   # 8 apps -> 3 pages
+        ns = {"math": __import__("math"), "apps": ["a"] * 8, "state": {"page": saved}}   # 8 apps -> 3 pages
         exec(snippet, ns)
         assert ns["MAX_PAGE"] == 3 and ns["state"]["page"] == expect, saved
-    ns = {"math": __import__("math"), "henniefrancis": ["a"] * 3, "state": {"page": 1}}            # apps deleted: 1 page
+    ns = {"math": __import__("math"), "apps": ["a"] * 3, "state": {"page": 1}}            # apps deleted: 1 page
     exec(snippet, ns)
     assert ns["state"]["page"] == 0
 

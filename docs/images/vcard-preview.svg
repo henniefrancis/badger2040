@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="888" height="384" viewBox="0 0 296 128" shape-rendering="crispEdges">
   <rect width="296" height="128" fill="#f4f2ec"/>
   <rect x="0" y="0" width="171" height="22" fill="#000"/>
-  <text x="85.5" y="16" font-family="monospace" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">Personal</text>
+  <text x="85.5" y="16" font-family="monospace" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">Profile</text>
   <text x="85.5" y="62" font-family="monospace" font-size="18" text-anchor="middle">Save my</text>
   <text x="85.5" y="84" font-family="monospace" font-size="18" text-anchor="middle">contact</text>
   <text x="85.5" y="116" font-family="monospace" font-size="10" text-anchor="middle">Scan with camera</text>
