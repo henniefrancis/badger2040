@@ -1,3 +1,5 @@
+# Based on Pimoroni Badger 2040 badge example code, Copyright (c) Pimoroni Ltd, MIT License.
+# https://github.com/pimoroni/badger2040  (see THIRD_PARTY_NOTICES.md).
 import badger2040
 import badger_os
 import qrcode
@@ -286,7 +288,6 @@ while True:
     if display.pressed(badger2040.BUTTON_B) or display.pressed(badger2040.BUTTON_C):
         display.set_pen(1)
         display.clear()
-        #badger_os.warning(display, "If you have any open source projects you want me to share, contact me via ricsue@amazon.com")
         draw_badge()
         display.update()
         time.sleep(7)
@@ -295,7 +296,6 @@ while True:
     if display.pressed(badger2040.BUTTON_A):
         display.set_pen(1)
         display.clear()
-        #badger_os.warning(display, "If you have any open source projects you want me to share, contact me via ricsue@amazon.com")
         draw_qr_file(state["current_qr"])
         badger_os.state_save("qrcodes", state)
         display.update()

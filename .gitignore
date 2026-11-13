@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Real (personal) configuration and logos never go in this public repo.
+config/badge.json
+config/images/
+config/icons/
+badge.json
+*.local.json
+.claude/
+
+# Flash dumps and firmware images can contain everything on a badge.
+*.uf2
+*.bin
+flash-dump*

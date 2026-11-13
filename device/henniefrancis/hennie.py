@@ -1,3 +1,5 @@
+# Based on Pimoroni Badger 2040 badge example code, Copyright (c) Pimoroni Ltd, MIT License.
+# https://github.com/pimoroni/badger2040  (see THIRD_PARTY_NOTICES.md).
 import badger2040
 import jpegdec
 import pngdec
