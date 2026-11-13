@@ -4,7 +4,7 @@
 
 **A config-driven conference badge for the [Pimoroni Badger 2040](https://shop.pimoroni.com/products/badger-2040).**
 
-Three buttons, three sections, a pocketful of QR codes, photo badges and logos — all from one JSON file, on a screen that holds its image with the power off.
+Three buttons pick a section; Up and Down page through it. Pages can be QR codes, photo badges or logos, all defined in one JSON file, on a screen that holds its image with no power.
 
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Badger%202040-ff69b4.svg)
@@ -19,7 +19,7 @@ Three buttons, three sections, a pocketful of QR codes, photo badges and logos �
 
 <img src="docs/images/vcard-preview.svg" alt="vCard QR page mock-up" width="420" />
 
-<sub>Mock-up — placeholder text only.</sub>
+<sub>Mock-up with placeholder text only.</sub>
 
 </div>
 
@@ -29,36 +29,36 @@ Three buttons, three sections, a pocketful of QR codes, photo badges and logos �
 
 This turns a Badger 2040 into a tidy, battery-free **section badge**. Each of the three front buttons opens a *section*; **Up** and **Down** flip through the pages inside it and wrap around. A page can be:
 
-- 🖼️ a **full-screen logo**,
-- 🪪 a **photo badge** (your picture, name, title and website), or
-- 🔳 a **QR code** — a link, or a **vCard** that drops you straight into someone's contacts.
+- a **full-screen logo**,
+- a **photo badge** with your picture, name, title and website, or
+- a **QR code**: a link, or a **vCard** that adds you to someone's contacts.
 
-Everything on the badge comes from **one `badge.json` file**. Your real details and logos live in a *private* place and are copied to the badge by a single command, so this public repo holds **no personal data** — just code, tooling and clearly-labelled placeholders.
+Everything on the badge comes from one `badge.json` file. Your real details and logos live in a private place and are copied to the badge by a single command, so this public repo holds no personal data, only code, tooling and clearly labelled placeholders.
 
 <p align="right"><a href="#-section-badge">⬆ back to top</a></p>
 
 ## Features
 
-- **One file to rule it all** — sections, pages, text and QR data are all declared in `badge.json`. No code changes to re-badge yourself for a new event.
-- **Battery-free by design** — e-ink keeps the last image with zero power. Press a button, it wakes, draws, and sleeps again.
-- **Sharp every time** — crisp built-in bitmap fonts at whole sizes only, so text never renders ragged on e-ink.
-- **QR codes that actually scan** — codes are drawn as large as the screen allows, with whole-pixel modules and an optional quiet zone.
-- **vCard built in** — a single QR adds your name, title, company, email, phone, website and LinkedIn to a phone's contacts.
-- **Privacy-first workflow** — real data stays in a private folder; the public repo and tooling refuse to ship or commit it.
-- **Validated before it ships** — a local validator (no badge needed) checks every page, sizes every QR and fails loudly on anything that won't fit.
-- **Tested** — 1309 host tests run on a PC against fake hardware modules.
+- Sections, pages, text and QR data are all declared in `badge.json`. Re-badge yourself for a new event without touching code.
+- E-ink keeps the last image with no power. Press a button and the badge wakes, draws the page, and sleeps again.
+- Text uses the built-in bitmap fonts at whole sizes only, so it stays sharp on e-ink.
+- QR codes are drawn as large as the screen allows, with whole-pixel modules and an optional quiet zone, so phones can read them.
+- One QR holds a vCard: name, title, company, email, phone, website and LinkedIn, straight into a phone's contacts.
+- Real data stays in a private folder; the repo and tooling refuse to ship or commit it.
+- A local validator (no badge needed) checks every page and sizes every QR before you deploy.
+- 1306 tests run on a PC against fake hardware modules.
 
 ### The badge at a glance
 
-Buttons **A / B / C** open sections `a / b / c`. The titles below are just **examples** — name your sections anything you like.
+Buttons **A / B / C** open sections `a / b / c`. The titles below are only examples; name your sections anything you like.
 
-| Button | Example section | Pages (Up / Down to flip — wraps around) |
+| Button | Example section | Pages (Up / Down to flip, wraps around) |
 |:---:|---|---|
 | **A** | Profile | photo badge → contact QR (vCard) → website QR |
 | **B** | Company | logo → role badge → website QR |
 | **C** | Event | logo → schedule QR |
 
-There's also a **Project** app (section `p`) on the launcher — a QR to this repo, an "about" page and a QR to the hardware. It pages with Up/Down like any other section, and A/B/C inside it jump to your three main sections.
+There's also a **Project** app (section `p`) on the launcher, with a QR to this repo, an about page and a QR to the hardware. It pages with Up/Down like any other section, and A/B/C inside it jump to your three main sections.
 
 > The launcher order (which apps appear, and on which page) is set in [`device/launcher.py`](device/launcher.py). Apps that aren't on the badge are skipped.
 
@@ -77,7 +77,7 @@ There's also a **Project** app (section `p`) on the launcher — a QR to this re
 
 ## Quick start
 
-Five steps: **flash → install → configure → convert → deploy**.
+Five steps: flash, install, configure, convert, deploy.
 
 ### 1 · Flash Badger OS v0.0.5
 
@@ -99,7 +99,7 @@ pip install -r requirements.txt
 
 ### 3 · Make your private config
 
-Keep your real config **outside this repo** — a private repo or a private folder.
+Keep your real config outside this repo, in a private repo or a private folder.
 
 ```bash
 mkdir my-badge                               # a private location of your choice
@@ -150,7 +150,7 @@ Edit `badge.json` (full schema in [Configuration](#configuration)). The shape:
 }
 ```
 
-Validate it any time — no badge required:
+Validate it any time, no badge required:
 
 ```bash
 python tools\validate_config.py my-badge
@@ -180,7 +180,7 @@ Add `--dry-run` to preview the file list without touching the badge.
 
 ## Configuration
 
-Everything you can change lives in `badge.json`. The sections below unfold the full reference.
+Everything you can change lives in `badge.json`. The sections below hold the full reference.
 
 <details>
 <summary><b>Sections</b></summary>
@@ -190,7 +190,7 @@ Everything you can change lives in `badge.json`. The sections below unfold the f
 - Sections `a`, `b`, `c` are the **A / B / C** buttons; `p` is the **Project** app on the launcher. All four are required.
 - Each section has a `title` (max 20 characters) and **1 to 8 pages**.
 - Inside any section, **Up/Down** page and wrap; **A/B/C** jump to sections `a/b/c`.
-- You may add **extra sections** too — see *Add your own sections* below.
+- You may add **extra sections** too. See *Add your own sections* below.
 
 </details>
 
@@ -206,7 +206,7 @@ Everything you can change lives in `badge.json`. The sections below unfold the f
 | `qr` | a QR for a `url` **or** a `vcard`; optional `title` (bar, falls back to the section title, max 40 chars) and `text` body (max 60 chars) |
 | `text` | a `header` title in a black bar, then up to 6 `lines` in the small font (15 px apart; an empty string is a spacer; over-wide lines are cut with `..`) |
 
-**Title bars** look the same on every page type: a 16 px black bar with white small-font text, centred. Bar text is never shrunk — the validator fails any title or header that won't fit. QR body text uses the largest whole size (2, then 1) at which every word fits. Text must contain no control characters, and is ASCII only (the fonts have no accented characters). All text uses the built-in bitmap font at whole sizes only — no vector fonts.
+**Title bars** look the same on every page type: a 16 px black bar with white small-font text, centred. Bar text is never shrunk, so the validator fails any title or header that won't fit. QR body text uses the largest whole size (2, then 1) at which every word fits. Text must contain no control characters, and is ASCII only (the fonts have no accented characters). All text uses the built-in bitmap font at whole sizes only, with no vector fonts.
 
 </details>
 
@@ -220,7 +220,7 @@ Everything you can change lives in `badge.json`. The sections below unfold the f
  "website": "<optional>", "image": "/images/me.png", "image_w": 104, "image_y": 0}
 ```
 
-The layout is fixed — white background, no border or divider:
+The layout is fixed, with a white background and no border or divider:
 
 1. The **photo** is drawn at the right edge (`x = 296 − image_w`, `y = image_y`). Make the PNG exactly `image_w` px wide (the badge can't scale down; `--kind photo` makes 104×128). `image_w` defaults to 104, `image_y` to 0.
 2. A **full-width black bar**, 16 px high, over the top of the photo, with the `header` centred in white.
@@ -238,10 +238,10 @@ The validator **fails** a `header` or `name` that won't fit (name at size 3 fits
 - A QR page takes either a `url` **or** a `vcard`.
 - The code is drawn **as tall as the screen allows**, with whole-pixel modules (**at least 2 px**, so phones scan it), **right-aligned**. The title bar runs across the top of the *left* area and stops 4 px before the code; the body `text` is centred below it.
 - **`qr_border`** (optional, top level) sets a quiet-zone border in modules per side:
-  - `0` *(default)* — no padding; the code is as large as its density allows (`128 // modules` px per module).
-  - `1`–`4` — adds that border (may shrink the code). ISO/IEC 18004 recommends 4.
-  - `"auto"` — the largest border (0–4) that does **not** shrink the code.
-- The validator prints each code's modules, border, px-per-module and pixel size, and **fails** any QR that would drop below 2 px per module. A full 7-field vCard is ~57–61 modules and caps at 2 px (114 px).
+  - `0` *(default)*: no padding; the code is as large as its density allows (`128 // modules` px per module).
+  - `1` to `4`: adds that border (may shrink the code). ISO/IEC 18004 recommends 4.
+  - `"auto"`: the largest border (0 to 4) that does **not** shrink the code.
+- The validator prints each code's modules, border, px-per-module and pixel size, and **fails** any QR that would drop below 2 px per module. A full 7-field vCard is roughly 57 to 61 modules and caps at 2 px (114 px).
 
 </details>
 
@@ -265,12 +265,12 @@ Image paths in `badge.json` are paths **on the badge** and must be `/images/<nam
 |---|---|---|
 | `logo` | 296×128, centred on white | full-screen `image` pages |
 | `icon` | 52×52 | launcher icons |
-| `photo` | 104×128 | **recommended** for badge photos: crop, contrast, sharpen, brighten, Floyd–Steinberg dithering |
+| `photo` | 104×128 | **recommended** for badge photos: crop, contrast, sharpen, brighten, Floyd-Steinberg dithering |
 | `badge` | 104×128 | same slot, plain fit + threshold (no tuning) |
 
 All output is 1-bit PNG. The converter refuses an all-white result (e.g. a fully transparent input) unless you pass `--allow-blank`, and stops with a one-line error on corrupt or oversized images.
 
-Files in your private `images/` and `icons/` folders replace the repo's placeholders of the same name. Validation and deploy **fail** if a logo or launcher icon you reference would fall back to a repo placeholder — for a first trial with placeholders, pass `--allow-placeholder-images` (it prints a warning).
+Files in your private `images/` and `icons/` folders replace the repo's placeholders of the same name. Validation and deploy **fail** if a logo or launcher icon you reference would fall back to a repo placeholder. For a first trial with placeholders, pass `--allow-placeholder-images` (it prints a warning).
 
 </details>
 
@@ -352,7 +352,7 @@ Put your own file in `images/` or `icons/` in your private folder (see [Images](
 python -m pytest -q tests
 ```
 
-Tests run on a PC against fake `badger2040`, `badger_os`, `pngdec` and `qrcode` modules in `tests/fakes/`. They cover config validation, vCard escaping, QR sizing, paging and wrap-around, state restore, error pages, the validator, the image converter and the deploy planner — and they fail if a real config is ever tracked or the example looks like it contains a real email or phone number.
+Tests run on a PC against fake `badger2040`, `badger_os`, `pngdec` and `qrcode` modules in `tests/fakes/`. They cover config validation, vCard escaping, QR sizing, paging and wrap-around, state restore, error pages, the validator, the image converter and the deploy planner, and they fail if a real config is ever tracked or the example looks like it contains a real email or phone number.
 
 <details>
 <summary><b>Project layout</b></summary>
@@ -389,17 +389,15 @@ Before you change a badge, copy its files to your PC (Thonny's file browser work
 
 ## Contributing
 
-Issues and pull requests are welcome. Please run `python -m pytest -q tests` before opening a PR — the suite is the contract this badge is built on.
+Issues and pull requests are welcome. Please run `python -m pytest -q tests` before opening a PR; the whole suite should pass.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Parts are based on Pimoroni's MIT-licensed Badger 2040 code; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+MIT. See [LICENSE](LICENSE). Parts are based on Pimoroni's MIT-licensed Badger 2040 code; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-Any logos and trademarks you add are yours or their owners' — this project does not license them, and ships only clearly-labelled placeholders.
+Any logos and trademarks you add are yours or their owners'. This project does not license them, and ships only clearly labelled placeholders.
 
 ## Acknowledgments
 
-- [Pimoroni](https://shop.pimoroni.com/products/badger-2040) — the Badger 2040 hardware and Badger OS.
-- [MicroPython](https://micropython.org/) — the runtime on the board.
-
-<div align="center"><sub>Built for e-ink. Runs on a coin cell's worth of power. 🦡</sub></div>
+- [Pimoroni](https://shop.pimoroni.com/products/badger-2040) for the Badger 2040 hardware and Badger OS.
+- [MicroPython](https://micropython.org/) for the runtime on the board.
