@@ -1,0 +1,56 @@
+{
+  "sections": {
+    "a": {
+      "title": "Personal",
+      "pages": [
+        {"type": "badge", "header": "Welcome", "name": "Your Name", "title": "Your title", "website": "example.com", "image": "/images/hennie.png", "image_w": 108, "image_y": 0},
+        {"type": "qr", "title": "Contact Details", "text": "Save my Contact Details", "vcard": {
+          "name": "Your Name",
+          "title": "Your title",
+          "company": "Your company",
+          "email": "you@example.com",
+          "phone": "+00 00 000 0000",
+          "url": "https://example.com",
+          "linkedin": "https://www.linkedin.com/in/your-handle"
+        }},
+        {"type": "qr", "title": "My Personal Website", "text": "Visit my website", "url": "https://example.com"}
+      ]
+    },
+    "b": {
+      "title": "AWS",
+      "pages": [
+        {"type": "image", "image": "/images/aws.png"},
+        {"type": "badge", "header": "AWS Community Builder", "name": "Your Name", "title": "Serverless", "website": "example.com", "image": "/images/hennie.png", "image_w": 108, "image_y": 0},
+        {"type": "qr", "title": "AWS Builder Center", "text": "Visit my Builder Profile", "url": "https://builder.aws.com/community/@henniefrancis"}
+      ]
+    },
+    "c": {
+      "title": "Microsoft",
+      "pages": [
+        {"type": "image", "image": "/images/microsoft.png"}
+      ]
+    },
+    "p": {
+      "title": "Project",
+      "pages": [
+        {"type": "qr", "title": "Project", "text": "Build your own badge", "url": "https://github.com/henniefrancis/badger2040"},
+        {"type": "text", "header": "About this badge", "lines": [
+          "Made by Pimoroni, powered by MicroPython",
+          "Dual-core RP2040, 133MHz, 264KB RAM",
+          "2MB Flash (1MB OS, 1MB Storage)",
+          "296x128 pixel Black/White e-Ink",
+          "",
+          "https://pimoroni.com/badger2040"
+        ]},
+        {"type": "qr", "title": "Project", "text": "Get a Badger 2040", "url": "https://pimoroni.com/badger2040"}
+      ]
+    },
+    "work": {
+      "title": "Work",
+      "pages": [
+        {"type": "badge", "header": "Your Organisation", "name": "Your Name", "title": "Your role", "website": "example.org", "image": "/images/hennie.png", "image_w": 108, "image_y": 0},
+        {"type": "qr", "title": "Your Organisation", "text": "Visit our website", "url": "https://example.org"}
+      ]
+    }
+  }
+}
