@@ -1,8 +1,8 @@
 """badgekit: shared code for the Badger 2040 section badge.
 
-Lives at /lib/badgekit.py on the badge. The apps in /henniefrancis (personal,
-aws, microsoft, project, ...) are thin wrappers that call run_section() with a
-section key: a, b, c, p, or the name of an extra section (for example awscommza).
+Lives at /lib/badgekit.py on the badge. The apps in /badge (profile,
+company, event, project, ...) are thin wrappers that call run_section() with a
+section key: a, b, c, p, or the name of an extra section (for example work).
 
 The badge page look is adapted from Pimoroni's Badger 2040 badge example
 (MIT, Copyright (c) Pimoroni Ltd, https://github.com/pimoroni/badger2040).
@@ -19,12 +19,12 @@ import time
 WIDTH = 296
 HEIGHT = 128
 
-APP_DIR = "/henniefrancis"
-CONFIG_PATH = "/henniefrancis/config/badge.json"
+APP_DIR = "/badge"
+CONFIG_PATH = "/badge/config/badge.json"
 STATE_NAME = "badge"
 
 SECTION_KEYS = ("a", "b", "c", "p")
-SECTION_APPS = {"a": "personal", "b": "aws", "c": "microsoft", "p": "project"}
+SECTION_APPS = {"a": "profile", "b": "company", "c": "event", "p": "project"}
 EXTRA_KEY_MAX = 16  # extra section keys match ^[a-z][a-z0-9_]{1,15}$ (no re module on the badge)
 _KEY_FIRST = "abcdefghijklmnopqrstuvwxyz"
 _KEY_REST = _KEY_FIRST + "0123456789_"
@@ -79,7 +79,7 @@ BITMAP_CHAR_WIDTH = 4.8  # bitmap8 width per char at scale 1, averaged from devi
 # Error page layout
 ERROR_LINE_PITCH = 11
 ERROR_MAX_LINES = 8
-ERROR_HINT = "Check /henniefrancis/config/badge.json"
+ERROR_HINT = "Check /badge/config/badge.json"
 
 SETTLE_SECONDS = 0.06
 RELEASE_POLL_SECONDS = 0.01

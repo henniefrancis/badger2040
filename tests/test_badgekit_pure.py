@@ -38,7 +38,7 @@ def test_load_config_bad_json(tmp_path):
 def test_load_config_ok(tmp_path, cfg):
     p = tmp_path / "x.json"
     p.write_text(json.dumps(cfg))
-    assert bk.load_config(str(p))["sections"]["a"]["title"] == "Personal"
+    assert bk.load_config(str(p))["sections"]["a"]["title"] == "Profile"
 
 
 def _extend_pages(c):
@@ -196,8 +196,11 @@ def test_apply_button(cfg):
     assert bk.apply_button(cfg, "a", 0, "down") == ("a", 1)
     assert bk.apply_button(cfg, "a", 2, "down") == ("a", 0)
     assert bk.apply_button(cfg, "a", 0, "up") == ("a", 2)
-    assert bk.apply_button(cfg, "c", 0, "up") == ("c", 0)      # one-page section
-    assert bk.apply_button(cfg, "c", 0, "down") == ("c", 0)
+    one = copy.deepcopy(cfg)
+    one["sections"]["c"]["pages"] = one["sections"]["c"]["pages"][:1]
+    assert bk.apply_button(one, "c", 0, "up") == ("c", 0)      # one-page section
+    assert bk.apply_button(one, "c", 0, "down") == ("c", 0)
+    assert bk.apply_button(cfg, "c", 0, "down") == ("c", 1)    # two-page section
     assert bk.apply_button(cfg, "zz", 0, "down") == ("zz", 0)  # unknown section
     assert bk.apply_button(cfg, "a", 1, "weird") == ("a", 1)
 
@@ -279,7 +282,7 @@ def test_header_lines_caps_lines():
 
 def test_fit_title():
     assert bk.fit_title(meas, "Hi", 100) == ("Hi", 2)
-    assert bk.fit_title(meas, "Microsoft", 60) == ("Microsoft", 1)   # 108 > 60 at 2x, 54 fits at 1x
+    assert bk.fit_title(meas, "Companies", 60) == ("Companies", 1)   # 108 > 60 at 2x, 54 fits at 1x
     text, scale = bk.fit_title(meas, "A very long title indeed", 60)
     assert scale == 1 and text.endswith("..") and meas(text, 1) <= 60
 
@@ -494,7 +497,7 @@ def test_text_block_unbreakable_overflow_is_flagged_not_crashing():
 
 
 # ------------------------------------------------ extra sections
-@pytest.mark.parametrize("key", ["work", "awscommza", "dotcore", "ab", "a1", "a_b", "x" * 16, "z9_"])
+@pytest.mark.parametrize("key", ["work", "extra", "ab", "a1", "a_b", "x" * 16, "z9_"])
 def test_valid_extra_keys(key):
     assert bk.valid_extra_key(key)
 
@@ -527,8 +530,8 @@ def test_extra_section_is_validated_like_the_others(cfg):
 
 
 def test_app_for():
-    assert bk.app_for("a") == "personal" and bk.app_for("p") == "project"
-    assert bk.app_for("awscommza") == "awscommza" and bk.app_for("work") == "work"
+    assert bk.app_for("a") == "profile" and bk.app_for("p") == "project"
+    assert bk.app_for("work") == "work" and bk.app_for("b") == "company" and bk.app_for("c") == "event"
     assert bk.app_for("Z") is None and bk.app_for("z") is None
 
 

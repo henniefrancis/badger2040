@@ -9,7 +9,7 @@ import badger_os
 import pngdec
 import jpegdec
 
-APP_DIR = "/henniefrancis"
+APP_DIR = "/badge"
 FONT_SIZE = 2
 
 changed = False
@@ -40,32 +40,31 @@ state = {
 badger_os.state_load("launcher", state)
 
 # Get all Python files
-all_files = [x[:-3] for x in os.listdir("/henniefrancis") if x.endswith(".py")]
+all_files = [x[:-3] for x in os.listdir(APP_DIR) if x.endswith(".py")]
 
-# Launcher order is owner-defined (ADR-006). Apps that are not on the badge are skipped.
-# Page 1: Personal, AWS, AWS Community. Note: launcher C here opens awscommza, while
-# C inside the badge still means Microsoft (the owner accepted this).
-first_page = ["personal", "aws", "awscommza"]
-# Page 2: Project section, devconf, dotcore
-second_page = ["project", "devconf", "dotcore"]
-# Page 3: Microsoft section
-third_page = ["microsoft"]
+# Launcher order: the section apps first (A, B, C map to profile, company, event),
+# then the project app and the example extra section. Apps that are not on the badge are skipped.
+# Page 1: profile, company, event
+first_page = ["profile", "company", "event"]
+# Page 2: project, work
+second_page = ["project", "work"]
+# Page 3: nothing by default (add your own apps here)
+third_page = []
 ordered = first_page + second_page + third_page
 # Only list apps that exist, then add any remaining files (for example socials)
 ordered = [x for x in ordered if x in all_files]
 remaining_files = [x for x in all_files if x not in ordered]
 
 # Create the ordered list
-henniefrancis = ordered + remaining_files
+apps = ordered + remaining_files
 
 # Section apps (wrapper app name -> badgekit section key). Add the name of any new wrapper app here.
-SECTION_APPS = {"personal": "a", "aws": "b", "microsoft": "c", "project": "p",
-                "awscommza": "awscommza", "dotcore": "dotcore", "devconf": "devconf"}
+SECTION_APPS = {"profile": "a", "company": "b", "event": "c", "project": "p", "work": "work"}
 
 # Approximate center lines for buttons A, B and C
 centers = (41, 147, 253)
 
-MAX_PAGE = math.ceil(len(henniefrancis) / 3)
+MAX_PAGE = math.ceil(len(apps) / 3)
 
 # A saved page beyond the last page (apps were deleted) would show an empty page
 if type(state["page"]) is not int or not 0 <= state["page"] < MAX_PAGE:
@@ -113,11 +112,11 @@ def render():
     display.clear()
     display.set_pen(0)
 
-    max_icons = min(3, len(henniefrancis[(state["page"] * 3):]))
+    max_icons = min(3, len(apps[(state["page"] * 3):]))
 
     for i in range(max_icons):
         x = centers[i]
-        label = henniefrancis[i + (state["page"] * 3)]
+        label = apps[i + (state["page"] * 3)]
         icon_label = label.replace("_", "-")
         icon = f"{APP_DIR}/icon-{icon_label}"
         label = label.replace("_", " ")
@@ -158,7 +157,7 @@ def wait_for_user_to_release_buttons():
 def launch_example(index):
     wait_for_user_to_release_buttons()
 
-    file = henniefrancis[(state["page"] * 3) + index]
+    file = apps[(state["page"] * 3) + index]
     if file in SECTION_APPS:
         # Opening from the launcher always starts at page 1 of that section,
         # and tells badgekit to ignore the stale wake button.

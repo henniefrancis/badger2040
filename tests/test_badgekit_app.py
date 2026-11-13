@@ -26,8 +26,8 @@ def cfg():
 def env(monkeypatch, tmp_path):
     monkeypatch.setattr(bk.time, "sleep", lambda s: None)
     monkeypatch.setattr(bk, "CONFIG_PATH", str(tmp_path / "badge.json"))
-    pngdec.FILES.update({"/images/hennie.png": (108, 146), "/images/aws.png": (296, 128),
-                         "/images/microsoft.png": (296, 128)})
+    pngdec.FILES.update({"/images/me.png": (104, 128), "/images/company.png": (296, 128),
+                         "/images/event.png": (296, 128)})
     hw.halt_limit = 3
     yield
 
@@ -60,7 +60,7 @@ def test_fresh_launch_opens_page_one_and_persists(cfg):
     fresh_launch("a")
     app.start()
     assert (app.section, app.page) == ("a", 0)
-    assert pngdec.decoded[-1] == ("/images/hennie.png", bk.WIDTH - 108, 0)      # image_w 108 in the example
+    assert pngdec.decoded[-1] == ("/images/me.png", bk.WIDTH - 104, 0)      # image_w 104 in the example
     assert app.display.updates == 1
     assert app.display.speed == hw.UPDATE_NORMAL
     assert saved() == {"section": "a", "page": 0, "launched": False}
@@ -81,7 +81,7 @@ def test_wake_restores_last_page(cfg):
     app = make("b")
     app.start()
     assert (app.section, app.page) == ("b", 2)
-    assert qrcode.created[-1].text == "https://builder.aws.com/community/@henniefrancis"
+    assert qrcode.created[-1].text == "https://example.com"
     assert qrcode.created[-1].ecc == qrcode.ECC_LOW
 
 
@@ -106,12 +106,12 @@ def test_wake_up_wraps_to_last_page(cfg):
 def test_wake_with_section_button_switches_and_updates_running_app(cfg):
     write_cfg(cfg)
     left_state("b", 2)
-    badger_os.store["launcher"] = json.dumps({"page": 0, "running": "/henniefrancis/aws"})
+    badger_os.store["launcher"] = json.dumps({"page": 0, "running": "/badge/company"})
     hw.wake_buttons.add(hw.BUTTON_A)
     app = make("b")
     app.start()
     assert (app.section, app.page) == ("a", 0)
-    assert json.loads(badger_os.store["launcher"])["running"] == "/henniefrancis/personal"
+    assert json.loads(badger_os.store["launcher"])["running"] == "/badge/profile"
 
 
 def test_wake_with_two_buttons_picks_one(cfg):
@@ -155,7 +155,7 @@ def test_state_loader_exception_is_survived(cfg):
 def test_state_for_other_section_is_ignored(cfg):
     write_cfg(cfg)
     left_state("b", 2)
-    app = make("a")      # personal wrapper started while state says section b
+    app = make("a")      # profile wrapper started while state says section b
     app.start()
     assert (app.section, app.page) == ("a", 0)
 
@@ -210,11 +210,11 @@ def test_button_after_fixing_config_recovers(cfg):
 
 def test_missing_image_shows_error_not_crash(cfg):
     write_cfg(cfg)
-    pngdec.FILES.pop("/images/aws.png")
+    pngdec.FILES.pop("/images/company.png")
     app = make("b")
     fresh_launch("b")
     app.start()
-    assert "Missing image /images/aws.png" in error_texts(app)
+    assert "Missing image /images/company.png" in error_texts(app)
     app.handle("down")                      # can still navigate away
     assert (app.section, app.page) == ("b", 1)
 
@@ -285,6 +285,7 @@ def test_url_qr_is_bigger_modules(cfg):
 
 # ------------------------------------------------------------ main loop
 def test_loop_paging_wraps_and_one_page_section_ignores(cfg):
+    cfg["sections"]["c"]["pages"] = cfg["sections"]["c"]["pages"][:1]      # make c a one-page section
     write_cfg(cfg)
     app = make("a")
     fresh_launch("a")
@@ -331,9 +332,9 @@ def test_loop_switching_sections_resets_to_page_one(cfg):
     assert (app.section, app.page) == ("b", 0)
     app.handle("c")
     assert (app.section, app.page) == ("c", 0)
-    assert json.loads(badger_os.store["launcher"])["running"] == "/henniefrancis/microsoft"
+    assert json.loads(badger_os.store["launcher"])["running"] == "/badge/event"
     app.handle("a")
-    assert json.loads(badger_os.store["launcher"])["running"] == "/henniefrancis/personal"
+    assert json.loads(badger_os.store["launcher"])["running"] == "/badge/profile"
 
 
 def test_loop_a_plus_c_exits_to_launcher(cfg):
@@ -393,9 +394,9 @@ def test_project_section_restores_page_and_keeps_launcher_running_entry(cfg):
     app.start()
     assert (app.section, app.page) == ("p", 1)
     assert "About this badge" in app.display.texts()
-    badger_os.store["launcher"] = json.dumps({"page": 1, "running": "/henniefrancis/project"})
+    badger_os.store["launcher"] = json.dumps({"page": 1, "running": "/badge/project"})
     app.handle("b")
-    assert json.loads(badger_os.store["launcher"])["running"] == "/henniefrancis/aws"
+    assert json.loads(badger_os.store["launcher"])["running"] == "/badge/company"
 
 
 def test_project_wrapper_without_section_p_shows_error(cfg):
@@ -481,7 +482,7 @@ def test_badge_page_without_company_uses_full_height(cfg):
     app.start()
     texts = app.display.texts()
     assert "Your Name" in texts and "Your title" in texts and "example.com" in texts
-    assert "AWS Community Builder" not in texts
+    assert "Your Company" not in texts
 
 
 def test_badge_page_with_company(cfg):
@@ -489,17 +490,17 @@ def test_badge_page_with_company(cfg):
     left_state("b", 1)
     app = make("b")
     app.start()
-    assert "AWS Community Builder" in app.display.texts()
+    assert "Your Company" in app.display.texts()
 
 
 def test_full_image_page_is_centred(cfg):
-    cfg["sections"]["c"]["pages"][0]["image"] = "/images/microsoft.png"
+    cfg["sections"]["c"]["pages"][0]["image"] = "/images/event.png"
     write_cfg(cfg)
-    pngdec.FILES["/images/microsoft.png"] = (200, 60)
+    pngdec.FILES["/images/event.png"] = (200, 60)
     app = make("c")
     fresh_launch("c")
     app.start()
-    assert pngdec.decoded[-1] == ("/images/microsoft.png", 48, 34)
+    assert pngdec.decoded[-1] == ("/images/event.png", 48, 34)
 
 
 def test_config_not_mutated_by_rendering(cfg):
@@ -513,13 +514,13 @@ def test_config_not_mutated_by_rendering(cfg):
 
 def test_same_button_retries_after_draw_error(cfg):
     write_cfg(cfg)
-    pngdec.FILES.pop("/images/hennie.png")
+    pngdec.FILES.pop("/images/me.png")
     app = make("a")
     fresh_launch("a")
     app.start()
     assert app.showing_error
     updates = app.display.updates
-    pngdec.FILES["/images/hennie.png"] = (108, 146)
+    pngdec.FILES["/images/me.png"] = (104, 128)
     app.handle("a")                       # the current section's own button retries
     assert not app.showing_error
     assert app.display.updates == updates + 1
@@ -650,7 +651,7 @@ def test_qr_title_falls_back_to_section_title(cfg):
     left_state("a", 2)
     app = make("a")
     app.start()
-    assert "Personal" in app.display.texts()
+    assert "Profile" in app.display.texts()
 
 
 def test_qr_text_block_is_centred_in_left_area_below_the_bar(cfg):
@@ -689,7 +690,7 @@ def test_every_page_type_draws_its_bar_through_the_one_shared_function(cfg, monk
         app = make(key)
         app.start()
         shown[name] = app
-    assert [c[0] for c in calls] == ["AWS Community Builder", "Contact Details", "About this badge"]
+    assert [c[0] for c in calls] == ["Your Company", "Contact Details", "About this badge"]
     assert calls[0][1:] == (0, bk.WIDTH)                      # badge: full-width bar over the photo
     assert calls[2][1:] == (0, bk.WIDTH)
     # identical font, scale, height and offsets on every page type
@@ -737,7 +738,7 @@ def test_wrapper_opens_its_own_section(cfg):
     app.start()
     assert (app.section, app.page) == ("work", 0)
     assert "Your Organisation" in app.display.texts()               # company bar of the badge page
-    assert pngdec.decoded[-1][0] == "/images/hennie.png"
+    assert pngdec.decoded[-1][0] == "/images/me.png"
     assert saved() == {"section": "work", "page": 0, "launched": False}
 
 
@@ -774,10 +775,10 @@ def test_abc_jump_out_of_an_extra_section_and_running_entry_follows(cfg):
     app = make("work")
     fresh_launch("work")
     app.start()
-    badger_os.store["launcher"] = json.dumps({"page": 0, "running": "/henniefrancis/work"})
+    badger_os.store["launcher"] = json.dumps({"page": 0, "running": "/badge/work"})
     app.handle("b")
     assert (app.section, app.page) == ("b", 0)
-    assert json.loads(badger_os.store["launcher"])["running"] == "/henniefrancis/aws"
+    assert json.loads(badger_os.store["launcher"])["running"] == "/badge/company"
 
 
 def test_extra_section_wake_restores_page(cfg):
@@ -797,9 +798,10 @@ def test_extra_section_wake_down_button(cfg):
     assert (app.section, app.page) == ("work", 0)
 
 
-@pytest.mark.parametrize("name", ["awscommza", "dotcore", "devconf"])
+@pytest.mark.parametrize("name", ["work"])
 def test_wrapper_with_missing_section_shows_error_page_not_crash(cfg, name):
-    write_cfg(cfg)                                # the example has no awscommza or dotcore section
+    del cfg["sections"][name]                     # a wrapper app whose section is not in the config
+    write_cfg(cfg)
     app = make(name)
     fresh_launch(name)
     app.start()
@@ -902,44 +904,38 @@ def test_badge_page_clears_to_white_and_has_no_black_background_anywhere(cfg):
         assert [c for c in calls if c[0] == "line"] == []                    # no outline, no divider
 
 
-# ------------------------------------------------ devconf wrapper
-def devconf_cfg(cfg):
-    cfg["sections"]["devconf"] = {"title": "DevConf", "pages": [
-        {"type": "image", "image": "/images/aws.png"},
-        {"type": "qr", "title": "DevConf", "text": "Visit the event", "url": "https://example.org/devconf"}]}
+# ------------------------------------------------ work wrapper
+def test_work_wrapper_opens_section_work_with_wrap(cfg):
     write_cfg(cfg)
-
-
-def test_devconf_wrapper_opens_section_devconf_with_wrap(cfg):
-    devconf_cfg(cfg)
-    wrapper = os.path.join(ROOT, "device", "henniefrancis", "devconf.py")
+    wrapper = os.path.join(ROOT, "device", "badge", "work.py")
     with open(wrapper, encoding="utf-8") as f:
-        assert 'badgekit.run_section("devconf")' in f.read()
-    fresh_launch("devconf")
-    app = make("devconf")
+        assert 'badgekit.run_section("work")' in f.read()
+    fresh_launch("work")
+    app = make("work")
     app.start()
-    assert (app.section, app.page) == ("devconf", 0) and not app.showing_error
-    assert saved() == {"section": "devconf", "page": 0, "launched": False}
+    assert (app.section, app.page) == ("work", 0) and not app.showing_error
+    assert saved() == {"section": "work", "page": 0, "launched": False}
     app.handle("down")
-    assert qrcode.created[-1].text == "https://example.org/devconf"
+    assert qrcode.created[-1].text == "https://example.org"
     app.handle("down")
-    assert (app.section, app.page) == ("devconf", 0)                  # two pages loop back to page 1
-    badger_os.store["launcher"] = json.dumps({"page": 1, "running": "/henniefrancis/devconf"})
+    assert (app.section, app.page) == ("work", 0)                  # two pages loop back to page 1
+    badger_os.store["launcher"] = json.dumps({"page": 1, "running": "/badge/work"})
     app.handle("a")
-    assert json.loads(badger_os.store["launcher"])["running"] == "/henniefrancis/personal"
+    assert json.loads(badger_os.store["launcher"])["running"] == "/badge/profile"
 
 
-def test_devconf_wrapper_without_section_shows_error_page(cfg):
+def test_work_wrapper_without_section_shows_error_page(cfg):
+    del cfg["sections"]["work"]
     write_cfg(cfg)
-    app = make("devconf")
-    fresh_launch("devconf")
+    app = make("work")
+    fresh_launch("work")
     app.start()
-    assert app.showing_error and "Section DEVCONF is not in the config" in error_texts(app)
+    assert app.showing_error and "Section WORK is not in the config" in error_texts(app)
 
 
 # ------------------------------------------------ new badge page layout (header, name, title, website)
 def badge_page(cfg, **fields):
-    page = {"type": "badge", "header": "Header", "name": "Hennie Francis", "image": "/images/hennie.png"}
+    page = {"type": "badge", "header": "Header", "name": "Jordan Example", "image": "/images/me.png"}
     page.update(fields)
     cfg["sections"]["a"]["pages"][0] = page
     write_cfg(cfg)
@@ -954,34 +950,34 @@ def texts_by_y(app):
 
 
 def test_badge_three_field_render_and_fixed_layout_coordinates(cfg):
-    app, _ = badge_page(cfg, header="AWS Community Builder", name="Hennie Francis", title="Chief Executive Officer",
-                        website="awscommunity.co.za")
+    app, _ = badge_page(cfg, header="Your Company", name="Jordan Example", title="Chief Executive Officer",
+                        website="example-site.co.uk")
     assert (bk.BADGE_TEXT_X, bk.BADGE_NAME_Y, bk.BADGE_NAME_SCALE) == (2, 24, 3)
     assert (bk.BADGE_TITLE_Y, bk.BADGE_WEBSITE_Y, bk.BADGE_LINE_SCALE) == (92, 110, 2)
     c = text_calls(app)
-    assert c["Hennie Francis"][2:] == (2, 24, 3)                       # name: x 2, y 24, scale 3
+    assert c["Jordan Example"][2:] == (2, 24, 3)                       # name: x 2, y 24, scale 3
     assert c["Chief Executive Officer"][2:] == (2, 92, 2)              # title: x 2, y 92, scale 2
-    assert c["awscommunity.co.za"][2:] == (2, 110, 2)                  # website: x 2, y 110, scale 2
-    bar = c["AWS Community Builder"]
+    assert c["example-site.co.uk"][2:] == (2, 110, 2)                  # website: x 2, y 110, scale 2
+    bar = c["Your Company"]
     assert bar[3] == 4 and bar[4] == 1                                 # header text in the bar, scale 1
-    assert bar[2] == (bk.WIDTH - app.display.measure_text("AWS Community Builder", 1)) // 2   # centred
+    assert bar[2] == (bk.WIDTH - app.display.measure_text("Your Company", 1)) // 2   # centred
     assert app.display.rects() == [(0, 0, 296, 16)]                    # full-width bar, nothing else (no divider)
 
 
 def test_badge_name_title_website_are_left_aligned_and_black(cfg):
     app, _ = badge_page(cfg, title="T", website="W")
     calls = app.display.calls
-    i = max(k for k, c in enumerate(calls) if c[0] == "text" and c[1] == "Hennie Francis")
+    i = max(k for k, c in enumerate(calls) if c[0] == "text" and c[1] == "Jordan Example")
     assert [c[1] for c in calls[:i] if c[0] == "pen"][-1] == 0         # black text
-    assert all(c[2] == 2 for c in calls if c[0] == "text" and c[1] in ("Hennie Francis", "T", "W"))
+    assert all(c[2] == 2 for c in calls if c[0] == "text" and c[1] in ("Jordan Example", "T", "W"))
 
 
 def test_badge_image_position_uses_image_w_and_image_y(cfg):
     for w, y in ((104, 0), (86, 19), (86, 9), (296, 0), (50, 128), (1, 5)):
         app, _ = badge_page(cfg, image_w=w, image_y=y)
-        assert pngdec.decoded[-1] == ("/images/hennie.png", bk.WIDTH - w, y)
+        assert pngdec.decoded[-1] == ("/images/me.png", bk.WIDTH - w, y)
     app, _ = badge_page(cfg)                                            # defaults: 104 wide, y 0
-    assert pngdec.decoded[-1] == ("/images/hennie.png", 296 - 104, 0)
+    assert pngdec.decoded[-1] == ("/images/me.png", 296 - 104, 0)
 
 
 def test_badge_header_bar_is_drawn_over_the_image(cfg, monkeypatch):
@@ -1005,9 +1001,9 @@ def test_badge_title_and_website_are_optional(cfg):
 
 
 def test_badge_name_fits_at_scale_three_and_overflow_steps_down_whole_scales(cfg):
-    app, _ = badge_page(cfg, name="Hennie Francis")
-    n = text_calls(app)["Hennie Francis"]
-    assert n[4] == 3 and n[2] + app.display.measure_text("Hennie Francis", 3) <= bk.WIDTH     # 201 px fits in 296
+    app, _ = badge_page(cfg, name="Jordan Example")
+    n = text_calls(app)["Jordan Example"]
+    assert n[4] == 3 and n[2] + app.display.measure_text("Jordan Example", 3) <= bk.WIDTH     # 201 px fits in 296
     app, _ = badge_page(cfg, name="N" * 40)                             # 576 px at scale 3: never leaves the screen
     name = [c for c in app.display.calls if c[0] == "text" and c[1].startswith("NN")][0]
     assert type(name[4]) is int and name[4] < 3
@@ -1015,9 +1011,9 @@ def test_badge_name_fits_at_scale_three_and_overflow_steps_down_whole_scales(cfg
 
 
 def test_badge_title_and_website_may_run_over_the_image(cfg):
-    app, _ = badge_page(cfg, title="Chief Executive Officer", website="www.awscommunity.co.za", image_w=104)
+    app, _ = badge_page(cfg, title="Chief Executive Officer", website="www.example-site.co.uk", image_w=104)
     c = text_calls(app)
-    for t in ("Chief Executive Officer", "www.awscommunity.co.za"):
+    for t in ("Chief Executive Officer", "www.example-site.co.uk"):
         assert c[t][2] + app.display.measure_text(t, 2) > bk.WIDTH - 104       # over the photo: allowed
         assert c[t][2] + app.display.measure_text(t, 2) <= bk.WIDTH            # but on screen
 
@@ -1036,4 +1032,4 @@ def test_badge_page_has_no_border_around_the_photo(cfg):
         app = make(key)
         app.start()
         assert [c for c in app.display.calls if c[0] == "line"] == []
-        assert pngdec.decoded[-1][0] == "/images/hennie.png"
+        assert pngdec.decoded[-1][0] == "/images/me.png"

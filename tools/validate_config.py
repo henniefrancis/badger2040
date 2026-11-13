@@ -26,10 +26,10 @@ PLACEHOLDER_EMAIL_DOMAINS = ("example.com", "example.org", "example.net")
 PLACEHOLDER_URL_HOSTS = ("example.com", "example.org", "example.net")
 PLACEHOLDER_LINKEDIN = "your-handle"
 REPO_IMAGES = os.path.join(ROOT, "device", "images")
-REPO_ICONS = os.path.join(ROOT, "device", "henniefrancis")
+REPO_ICONS = os.path.join(ROOT, "device", "badge")
 # Repo files that stand in for trademarked logos. They must never silently replace real ones.
-PLACEHOLDER_IMAGES = ("aws.png", "microsoft.png")
-PLACEHOLDER_ICONS = ("icon-aws.png", "icon-microsoft.png", "icon-project.png")
+PLACEHOLDER_IMAGES = ("company.png", "event.png")
+PLACEHOLDER_ICONS = ("icon-company.png", "icon-event.png", "icon-project.png")
 
 
 def resolve_config_file(path):
@@ -88,7 +88,7 @@ def find_placeholders(cfg):
 
 
 def wrapper_sections():
-    """Map wrapper app file name -> section key it opens, for wrappers in device/henniefrancis."""
+    """Map wrapper app file name -> section key it opens, for wrappers in device/badge."""
     found = {}
     if not os.path.isdir(REPO_ICONS):
         return found

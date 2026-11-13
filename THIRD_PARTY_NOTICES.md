@@ -2,7 +2,7 @@
 
 ## Pimoroni Badger 2040 / Badger OS
 
-`device/launcher.py` is based on the launcher shipped with Pimoroni's Badger OS, and `device/henniefrancis/hennie.py` and `device/henniefrancis/summit.py` are based on Pimoroni's Badger 2040 badge example code. The badge page layout in `device/lib/badgekit.py` is adapted from the same example.
+`device/launcher.py` is based on the launcher shipped with Pimoroni's Badger OS, and the badge page layout in `device/lib/badgekit.py` is adapted from Pimoroni's Badger 2040 badge example code.
 
 Copyright (c) Pimoroni Ltd. Released under the MIT License.
 Source and full licence text: https://github.com/pimoroni/badger2040
@@ -17,4 +17,4 @@ The MIT licence requires this copyright notice and the licence text to be kept w
 
 ## Trademarks
 
-AWS, Microsoft and GitHub are trademarks of their respective owners. This project is not affiliated with or endorsed by them.
+All product and company names are trademarks of their respective owners. This project is not affiliated with or endorsed by them.
